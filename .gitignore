@@ -1,0 +1,96 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# MyPy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# PyTest
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+.env.production
+secret_key.txt
+
+# Logs
+*.log
+logs/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# MySQL data volumes (if not using docker)
+mysql_data/
+
+# Temporary files
+tmp/
+temp/
+.tmp/
+.temp/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Docker
+.docker/
+
+# alembic versions (optional - uncomment if you want to track them)
+# alembic/versions/*.py
+# !alembic/versions/__init__.py
+
+# Testing
+test_coverage/
+.tox/
+nox/
+coverage.xml
+.coverage.*

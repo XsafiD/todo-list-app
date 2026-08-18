@@ -1,0 +1,33 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "instructions": ["AGENTS.md"],
+  "mcp": {
+    "web-reader": {
+      "type": "remote",
+      "url": "https://api.z.ai/api/mcp/web_reader/mcp",
+      "headers": {
+        "Authorization": "Bearer c9e4d6a544ed487ea2f0cee11d2c91a7.6FOSGsJsWEKkDt7L"
+      },
+      "enabled": true
+    },
+    "chrome-devtools": {
+      "type": "local",
+      "command": ["npx", "-y", "chrome-devtools-mcp@latest"],
+      "enabled": true
+    },
+    "perplexity": {
+      "type": "local",
+      "command": ["npx", "-y", "perplexity-web-api-mcp"],
+      "environment": {
+        "PERPLEXITY_SESSION_TOKEN": "eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIn0..CDxI6ZWetpbAZ7wI.nS2pl_YWGjt7PBWRFKwqdhW7GrnfJKa1oKnYrCxldjdh1OXw_bkaTPSANHYvlwRFt3GvGeLblUR4wwv9dQJmloBWBivxNR0_hjrSbuf0EC4hcPIgxMNVf8uivJl7kx8_Worl8CE5sKOcCDDwSSFKBKdVK1KV7S6YT4aO75oDf61b2WhLZHJ9nS9OZCX5dyNZXqOI6eFA7kD1JkjhCzJOBdaG-DzTjayNGBvI8bdYSyBrBMe_Qcmf3Cn_m-v67cQTU4TOcUFwIqTtRcwQe-SqnUFVCw3hN_qQb0Jp1o7y_LuUJkCOUkT_nXDfYz1RYtIGWkPqykJuidNBQAWx8qHgm46LHp8RsiJ-EV4OlyqLd4sw9-I7yKfkHpfiwtffgN-cZLdBXCOrKYOqGwzqv5MnNxkbA3pN3Z2ykEA9TwPSXi3ua7uBBTkBu6UF8Zc17Cw5FQ6GTlysGQ.2IeqKCEwIks7uT_Qc3mJOQ",
+        "PERPLEXITY_CSRF_TOKEN": "4ca39dea4f3f117bdf3ec1a72af8a3949716a7673a0595d10bdc68d15d88e161%7C8241a1f7e94ee7fd3875c5074a6db936777c8c1ff2eeb0245c70f33a1b6ba486"
+      },
+      "enabled": true
+    },
+    "exa": {
+      "type": "remote",
+      "url": "https://mcp.exa.ai/mcp?exaApiKey=1795b4bd-767d-4303-8045-ef2aeb853ef4&tools=web_search_exa,web_search_advanced_exa,get_code_context_exa,crawling_exa,company_research_exa,people_search_exa,deep_researcher_start,deep_researcher_check",
+      "enabled": true
+    }
+  }
+}

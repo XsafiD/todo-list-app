@@ -1,0 +1,22 @@
+{
+  "mcpServers": {
+    "chrome-devtools": {
+      "command": "npx",
+      "args": ["-y", "chrome-devtools-mcp@latest"]
+    },
+    "perplexity": {
+      "command": "npx",
+      "args": ["-y", "perplexity-web-api-mcp"],
+      "env": {
+        "PERPLEXITY_SESSION_TOKEN": "eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIn0..8CcD0tqL0Monz-2G.GYkFB5GlIL9VeAThJ7Cvg1M5pczGgSuBZQzwBb7gT2A0S1_IWe2d7e4F2fhX8aOnF6PXg3iGFzcB_bzFSwd6VgpOr5eOIP0LhKVyvpty6AZXiFoGv38LjZp_s9J7wTj2mamdZRtssvPsEOOigFIwK5dXUqAsSuPSTMxIbo3pqcP5ym7oaddhhgkv8jVUuyHftE5HaIkgkLws62JOBSvyYji_cUZAwxcxAcHEbyqdX2FBIEpGjrjCMNYE4VjuXKUq8rk.1B7sOHiZ4KiWfpZKDYX7Wg",
+        "PERPLEXITY_CSRF_TOKEN": "1a90616345a88dd717de872cfac326ed9d99c1a805e2925fed9ae9c87329c96a%7C2d9053b54b99bd2c5402a5e1f5bd41d52aa19bba054009d259dce11e4370c15f",
+        "PERPLEXITY_SEARCH_MODEL": "turbo",
+        "PERPLEXITY_REASON_MODEL": "claude-4.6-sonnet-thinking"
+      }
+    },
+    "exa": {
+      "type": "http",
+      "url": "https://mcp.exa.ai/mcp?exaApiKey=1795b4bd-767d-4303-8045-ef2aeb853ef4&tools=web_search_exa,web_search_advanced_exa,get_code_context_exa,crawling_exa,company_research_exa,people_search_exa,deep_researcher_start,deep_researcher_check"
+    }
+  }
+}

@@ -1,0 +1,1020 @@
+<!-- 
+Dashboardku - Main Application (Phase 4: Frontend)
+Tech Stack: Vanilla HTML5 + Alpine.js v3 + Tailwind CSS
+Design System: Following DESIGN.md specifications
+-->
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Personal task management with webhook notifications">
+    <title>Dashboardku - Task Management</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+
+    <!-- Tailwind Config -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#0143b5',
+                        'primary-deep': '#0135a0',
+                        'primary-soft': 'rgba(1, 67, 181, 0.1)',
+                        canvas: '#f5f5f5',
+                        surface: '#ffffff',
+                        'surface-soft': '#f9fafb',
+                        hairline: '#e5e7eb',
+                        'hairline-soft': '#f3f4f6',
+                        'ink-deep': '#111827',
+                        ink: '#1f2937',
+                        charcoal: '#374151',
+                        slate: '#6b7280',
+                        steel: '#9ca3af',
+                        stone: '#d1d5db',
+                        'project-blue': '#3b82f6',
+                        'project-purple': '#8b5cf6',
+                        'project-green': '#10b981',
+                        'project-orange': '#f59e0b',
+                        'project-pink': '#ec4899',
+                        'project-teal': '#14b8a6',
+                        success: '#10b981',
+                        warning: '#f59e0b',
+                        critical: '#ef4444',
+                        info: '#3b82f6',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+                    },
+                    spacing: {
+                        'xxs': '4px',
+                        'xxl': '32px',
+                        'section': '48px',
+                    },
+                    borderRadius: {
+                        'xxs': '2px',
+                        'full': '9999px',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Custom CSS -->
+    <style>
+        [x-cloak] { display: none !important; }
+        
+        .task-checkbox:checked {
+            background-color: #0143b5;
+            border-color: #0143b5;
+        }
+        
+        .task-checkbox:checked::after {
+            content: '✓';
+            color: white;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a1a1a1;
+        }
+    </style>
+</head>
+<body class="bg-canvas text-ink font-sans antialiased" x-data="app()" x-init="init()">
+
+    <!-- Skip Link -->
+    <a href="#main-content" class="skip-link px-4 py-2 bg-primary text-white absolute -top-10 focus:top-0 transition-all z-50">Skip to main content</a>
+
+    <!-- Login Screen (shown when not authenticated) -->
+    <div x-show="!auth.token" x-transition.opacity 
+         class="min-h-screen flex items-center justify-center bg-canvas p-4" x-cloak>
+        <div class="card w-full max-w-md p-8">
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 bg-primary rounded-lg flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                    </svg>
+                </div>
+                <h1 class="text-2xl font-bold text-ink-deep mb-2">Dashboardku</h1>
+                <p class="text-steel">Personal Task Management</p>
+            </div>
+
+            <form @submit.prevent="login">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-ink mb-2">Username</label>
+                    <input type="text" x-model="auth.username" placeholder="Enter username" required
+                           class="input w-full px-4 py-2 border border-hairline rounded-lg focus:border-primary focus:ring-2 focus:ring-primary-soft outline-none transition-all">
+                </div>
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-ink mb-2">Password</label>
+                    <input type="password" x-model="auth.password" placeholder="Enter password" required
+                           class="input w-full px-4 py-2 border border-hairline rounded-lg focus:border-primary focus:ring-2 focus:ring-primary-soft outline-none transition-all">
+                </div>
+                <button type="submit" :disabled="auth.loading"
+                        class="btn btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <span x-show="!auth.loading">Sign In</span>
+                    <svg class="w-5 h-5 animate-spin" x-show="auth.loading" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="10" stroke-width="4" class="opacity-25"/>
+                        <path fill="currentColor" stroke="currentColor" stroke-width="4" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                    </svg>
+                </button>
+            </form>
+
+            <!-- Error message -->
+            <div x-show="auth.error" x-transition
+                 class="mt-4 p-3 bg-critical/10 border border-critical rounded-lg text-critical text-sm">
+                <p class="font-medium">Login Failed</p>
+                <p x-text="auth.error"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Application (shown when authenticated) -->
+    <template x-if="auth.token">
+        <div class="min-h-screen flex flex-col">
+            
+            <!-- Top Navigation -->
+            <nav class="bg-surface border-b border-hairline-soft sticky top-0 z-50">
+                <div class="container mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                            </svg>
+                        </div>
+                        <h1 class="text-xl font-semibold text-ink-deep">Dashboardku</h1>
+                    </div>
+
+                    <div class="hidden md:flex items-center gap-4">
+                        <span class="text-sm text-steel">Welcome, <strong class="text-ink" x-text="auth.username"></strong></span>
+                        <button @click="logout" class="btn btn-secondary text-sm">Logout</button>
+                    </div>
+
+                    <!-- Mobile menu button -->
+                    <button @click="showMobileMenu = !showMobileMenu" class="md:hidden p-2 hover:bg-surface-soft rounded-lg">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Mobile Menu -->
+                <div x-show="showMobileMenu" x-transition
+                     class="md:hidden border-t border-hairline bg-surface p-4 space-y-2" x-cloak>
+                    <p class="text-sm text-ink">Welcome, <strong class="text-primary" x-text="auth.username"></strong></p>
+                    <button @click="logout; showMobileMenu = false" class="btn btn-secondary text-sm w-full">Logout</button>
+                </div>
+            </nav>
+
+            <!-- Main Content -->
+            <main id="main-content" class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1">
+                
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-section">
+                    <div class="card p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-steel mb-1">Total Tasks</p>
+                                <p class="text-2xl font-semibold text-ink-deep" x-text="stats.total_tasks">0</p>
+                            </div>
+                            <div class="w-10 h-10 bg-primary-soft rounded-lg flex items-center justify-center">
+                                <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-steel mb-1">Active</p>
+                                <p class="text-2xl font-semibold text-ink-deep" x-text="stats.active_tasks">0</p>
+                            </div>
+                            <div class="w-10 h-10 bg-info/10 rounded-lg flex items-center justify-center">
+                                <svg class="w-5 h-5 text-info" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-steel mb-1">Completed</p>
+                                <p class="text-2xl font-semibold text-success" x-text="stats.completed_tasks">0</p>
+                            </div>
+                            <div class="w-10 h-10 bg-success/10 rounded-lg flex items-center justify-center">
+                                <svg class="w-5 h-5 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-steel mb-1">Overdue</p>
+                                <p class="text-2xl font-semibold text-critical" x-text="stats.overdue_tasks">0</p>
+                            </div>
+                            <div class="w-10 h-10 bg-critical/10 rounded-lg flex items-center justify-center">
+                                <svg class="w-5 h-5 text-critical" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Projects Section -->
+                <section class="mb-section">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-xl font-semibold text-ink-deep">Projects</h2>
+                        <button @click="openProjectModal()" class="btn btn-primary text-sm gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                            </svg>
+                            New Project
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5" x-data="{ projects: [] }">
+                        <!-- Loading State -->
+                        <div x-show="loading.projects" class="col-span-full text-center py-12">
+                            <p class="text-steel">Loading projects...</p>
+                        </div>
+
+                        <!-- Projects List -->
+                        <template x-for="project in projects" :key="project.id">
+                            <div class="card p-5 cursor-pointer hover:shadow-md transition-all">
+                                <div class="flex items-start justify-between mb-3">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-3 h-3 rounded-full" :class="`bg-${getColorClass(project.color)}`"></div>
+                                        <h3 class="font-medium text-ink" x-text="project.name"></h3>
+                                    </div>
+                                    <button @click.stop="archiveProject(project.id)" 
+                                            :class="project.archived ? 'text-success' : 'text-steel hover:text-ink'"
+                                            class="p-1 rounded hover:bg-surface-soft transition-colors"
+                                            :aria-label="`${project.archived ? 'Unarchive' : 'Archive'} project`">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path x-show="!project.archived" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z"/>
+                                            <path x-show="project.archived" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div class="flex items-center gap-4 text-sm">
+                                    <span class="text-steel" x-text="`${getProjectTaskCount(project.id)} tasks`"></span>
+                                    <span class="text-primary" x-text="`${getProjectActiveTasks(project.id)} active`"></span>
+                                </div>
+                                <div class="mt-4 flex gap-2">
+                                    <button @click="openTaskModal(null, project.id)" class="flex-1 btn btn-secondary text-xs">Add Task</button>
+                                    <button @click="viewTasks(project.id)" class="px-3 py-1.5 btn-ghost text-xs">View All</button>
+                                </div>
+                            </div>
+                        </template>
+
+                        <!-- Empty State -->
+                        <div x-show="projects.length === 0 && !loading.projects" class="col-span-full text-center py-12">
+                            <svg class="w-16 h-16 mx-auto text-steel mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
+                            </svg>
+                            <p class="text-steel mb-4">No projects yet</p>
+                            <button @click="openProjectModal()" class="btn btn-primary">Create your first project</button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Tasks Section -->
+                <section>
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-xl font-semibold text-ink-deep">Tasks</h2>
+                        <button @click="openTaskModal()" class="btn btn-primary text-sm gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                            </svg>
+                            New Task
+                        </button>
+                    </div>
+
+                    <!-- Filters -->
+                    <div class="flex flex-wrap gap-3 mb-6">
+                        <select x-model="filters.projectId" class="input py-2 px-3 text-sm w-auto">
+                            <option value="">All Projects</option>
+                            <template x-for="project in projects" :key="project.id">
+                                <option :value="project.id" x-text="project.name"></option>
+                            </template>
+                        </select>
+                        <select x-model="filters.status" class="input py-2 px-3 text-sm w-auto">
+                            <option value="">All Status</option>
+                            <option value="todo">To Do</option>
+                            <option value="in_progress">In Progress</option>
+                            <option value="done">Done</option>
+                        </select>
+                        <select x-model="filters.priority" class="input py-2 px-3 text-sm w-auto">
+                            <option value="">All Priority</option>
+                            <option value="low">Low</option>
+                            <option value="medium">Medium</option>
+                            <option value="high">High</option>
+                        </select>
+                    </div>
+
+                    <!-- Task List -->
+                    <div class="space-y-3" x-data="{ tasks: filteredTasks }">
+                        <!-- Loading State -->
+                        <div x-show="loading.tasks" class="text-center py-8">
+                            <p class="text-steel">Loading tasks...</p>
+                        </div>
+
+                        <!-- Task Items -->
+                        <template x-for="task in filteredTasks" :key="task.id">
+                            <div class="task-item"
+                                 :class="{ 'completed': task.status === 'done', 'overdue': isOverdue(task.deadline, task.status) }">
+                                <!-- Checkbox -->
+                                <input type="checkbox" 
+                                       :checked="task.status === 'done'"
+                                       @change="toggleTask(task.id, $event.target.checked)"
+                                       class="task-checkbox cursor-pointer">
+
+                                <!-- Task Content -->
+                                <div class="flex-1 min-w-0 pl-3">
+                                    <p class="task-title text-sm font-medium text-ink truncate" x-text="task.title"></p>
+                                    <div class="flex items-center gap-2 mt-2">
+                                        <!-- Project Tag -->
+                                        <span class="tag"
+                                              :class="getProjectColorClass(task.project_id)"
+                                              x-text="getProjectName(task.project_id)">
+                                        </span>
+
+                                        <!-- Priority Badge -->
+                                        <span class="tag text-xs px-2 py-0.5"
+                                              :class="getPriorityBadgeClass(task.priority)"
+                                              x-text="task.priority.charAt(0).toUpperCase() + task.priority.slice(1)">
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <!-- Metadata -->
+                                <div class="flex items-center gap-3 text-xs text-steel">
+                                    <!-- Deadline -->
+                                    <template x-if="task.deadline">
+                                        <div class="flex items-center gap-1"
+                                             :class="{'text-warning': isDueToday(task.deadline), 'text-critical': isOverdue(task.deadline, task.status)}">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                            </svg>
+                                            <span x-text="formatDeadline(task.deadline)"></span>
+                                        </div>
+                                    </template>
+
+                                    <!-- Actions -->
+                                    <div class="flex gap-2">
+                                        <button @click="editTask(task)" class="p-1 hover:bg-primary-soft rounded" aria-label="Edit task">
+                                            <svg class="w-4 h-4 text-steel hover:text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                                            </svg>
+                                        </button>
+                                        <button @click="deleteTask(task.id)" class="p-1 hover:bg-critical/10 rounded" aria-label="Delete task">
+                                            <svg class="w-4 h-4 text-steel hover:text-critical" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+
+                        <!-- Empty State -->
+                        <div x-show="filteredTasks.length === 0 && !loading.tasks" class="text-center py-12">
+                            <svg class="w-16 h-16 mx-auto text-steel mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                            </svg>
+                            <p class="text-steel mb-4">No tasks found</p>
+                            <button @click="openTaskModal()" class="btn btn-primary">Create your first task</button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Notifications Logs Section -->
+                <section class="mt-section">
+                    <h2 class="text-xl font-semibold text-ink-deep mb-6">Notification Logs</h2>
+                    <div class="card overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm">
+                                <thead class="bg-surface-soft border-b border-hairline">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left text-ink-deep font-medium">Time</th>
+                                        <th class="px-4 py-3 text-left text-ink-deep font-medium">Status</th>
+                                        <th class="px-4 py-3 text-left text-ink-deep font-medium">Response</th>
+                                        <th class="px-4 py-3 text-left text-ink-deep font-medium">Created</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-hairline-soft">
+                                    <template x-for="log in notificationLogs.slice(-10)" :key="log.id">
+                                        <tr>
+                                            <td class="px-4 py-3 text-ink" x-text="log.task_id || '-'"></td>
+                                            <td class="px-4 py-3">
+                                                <span class="tag"
+                                                      :class="{
+                                                          'tag-project-green': log.status === 'sent',
+                                                          'tag-project-orange': log.status === 'failed',
+                                                          'tag-stone': log.status === 'pending'
+                                                      }"
+                                                      x-text="log.status">
+                                                </span>
+                                            </td>
+                                            <td class="px-4 py-3 text-steel" x-text="log.response_code || '-'"></td>
+                                            <td class="px-4 py-3 text-steel" x-text="formatDate(log.created_at)"></td>
+                                        </tr>
+                                    </template>
+                                    <tr x-show="notificationLogs.length === 0">
+                                        <td colspan="4" class="px-4 py-8 text-center text-steel">
+                                            No notifications yet
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+            </main>
+
+            <!-- Footer -->
+            <footer class="border-t border-hairline-soft py-4 mt-8">
+                <div class="container mx-auto px-4 text-center text-sm text-steel">
+                    <p>Dashboardku © 2026 • Personal Task Management</p>
+                </div>
+            </footer>
+
+            <!-- Project Modal -->
+            <div x-show="modals.project" @click.outside="closeModals()" x-transition.opacity
+                 class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" x-cloak>
+                <div class="card w-full max-w-md" x-transition.scale>
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-lg font-semibold text-ink-deep" x-text="editingProject ? 'Edit Project' : 'New Project'"></h3>
+                        <button @click="closeModals()" class="p-2 hover:bg-surface-soft rounded-full">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <form @submit.prevent="saveProject()">
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-ink mb-2">Project Name</label>
+                            <input type="text" x-model="form.projectName" placeholder="Enter project name" required
+                                   class="input w-full px-4 py-2 border border-hairline rounded-lg focus:border-primary focus:ring-2 focus:ring-primary-soft outline-none">
+                        </div>
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium text-ink mb-2">Color</label>
+                            <div class="flex gap-3">
+                                <template x-for="color in ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ec4899', '#14b8a6']">
+                                    <button type="button"
+                                            :class="color"
+                                            class="w-8 h-8 rounded-full transition-transform hover:scale-110"
+                                            :style="backgroundColor: color"
+                                            @click="form.projectColor = color"></button>
+                                </template>
+                            </div>
+                        </div>
+                        <div class="flex gap-3 justify-end">
+                            <button type="button" @click="closeModals()" class="btn btn-secondary">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Save Project</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Task Modal -->
+            <div x-show="modals.task" @click.outside="closeModals()" x-transition.opacity
+                 class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" x-cloak>
+                <div class="card w-full max-w-md" x-transition.scale>
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-lg font-semibold text-ink-deep" x-text="editingTask ? 'Edit Task' : 'New Task'"></h3>
+                        <button @click="closeModals()" class="p-2 hover:bg-surface-soft rounded-full">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <form @submit.prevent="saveTask()">
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-ink mb-2">Task Title</label>
+                            <input type="text" x-model="form.taskTitle" placeholder="What needs to be done?" required
+                                   class="input w-full px-4 py-2 border border-hairline rounded-lg focus:border-primary focus:ring-2 focus:ring-primary-soft outline-none">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label class="block text-sm font-medium text-ink mb-2">Project</label>
+                                <select x-model="form.taskProjectId" class="input w-full px-3 py-2 border border-hairline rounded-lg focus:border-primary focus:outline-none">
+                                    <template x-for="project in projects.filter(p => !p.archived)" :key="project.id">
+                                        <option :value="project.id" x-text="project.name"></option>
+                                    </template>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-ink mb-2">Priority</label>
+                                <select x-model="form.taskPriority" class="input w-full px-3 py-2 border border-hairline rounded-lg focus:border-primary focus:outline-none">
+                                    <option value="low">Low</option>
+                                    <option value="medium">Medium</option>
+                                    <option value="high">High</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium text-ink mb-2">Deadline (Optional)</label>
+                            <input type="datetime-local" x-model="form.taskDeadline" class="input w-full px-3 py-2 border border-hairline rounded-lg focus:border-primary focus:outline-none">
+                        </div>
+                        <div class="flex gap-3 justify-end">
+                            <button type="button" @click="closeModals()" class="btn btn-secondary">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Save Task</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </template>
+
+    <!-- Toast Notifications -->
+    <div x-data="toastStore()" class="fixed bottom-4 right-4 z-50 space-y-2">
+        <template x-for="toast in toasts" :key="toast.id">
+            <div x-show="toast.visible" x-transition
+                 :class="{
+                     'bg-success': toast.type === 'success',
+                     'bg-critical': toast.type === 'error',
+                     'bg-warning': toast.type === 'warning',
+                     'bg-ink': toast.type === 'info'
+                 }"
+                 class="card px-4 py-3 text-white shadow-lg max-w-sm">
+                <p x-text="toast.message"></p>
+            </div>
+        </template>
+    </div>
+
+    <!-- Application Script -->
+    <script>
+        // Toast Store
+        function toastStore() {
+            return {
+                toasts: [],
+                add(message, type = 'info') {
+                    const id = Date.now();
+                    this.toasts.push({ id, message, type, visible: true });
+                    setTimeout(() => {
+                        const toast = this.toasts.find(t => t.id === id);
+                        if (toast) toast.visible = false;
+                        setTimeout(() => {
+                            this.toasts = this.toasts.filter(t => t.id !== id);
+                        }, 300);
+                    }, 3000);
+                }
+            }
+        }
+
+        // Main App
+        function app() {
+            return {
+                auth: {
+                    token: localStorage.getItem('dashboardku_token') || null,
+                    username: localStorage.getItem('dashboardku_username') || '',
+                    password: '',
+                    loading: false,
+                    error: null
+                },
+                showing: {
+                    mobileMenu: false,
+                    projectModal: false,
+                    taskModal: false
+                },
+                editing: {
+                    project: null,
+                    task: null
+                },
+                form: {
+                    projectName: '',
+                    projectColor: '#3b82f6',
+                    taskTitle: '',
+                    taskProjectId: null,
+                    taskPriority: 'medium',
+                    taskDeadline: ''
+                },
+                filters: {
+                    projectId: null,
+                    status: '',
+                    priority: ''
+                },
+                stats: {
+                    total_tasks: 0,
+                    active_tasks: 0,
+                    completed_tasks: 0,
+                    overdue_tasks: 0
+                },
+                projects: [],
+                tasks: [],
+                notificationLogs: [],
+                loading: {
+                    projects: false,
+                    tasks: false,
+                    logs: false
+                },
+                
+                init() {
+                    if (!this.auth.token) {
+                        document.querySelector('body').classList.remove('antialiased');
+                    }
+                    if (this.auth.token) {
+                        this.loadData();
+                    }
+                },
+
+                async login() {
+                    this.auth.loading = true;
+                    this.auth.error = null;
+                    
+                    try {
+                        const response = await fetch('/api/login', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                username: this.auth.username,
+                                password: this.auth.password
+                            })
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (response.ok && data.access_token) {
+                            localStorage.setItem('dashboardku_token', data.access_token);
+                            localStorage.setItem('dashboardku_username', data.username);
+                            this.auth.token = data.access_token;
+                            this.auth.username = data.username;
+                            this.auth.password = '';
+                            this.loadData();
+                        } else {
+                            this.auth.error = data.detail || 'Login failed';
+                        }
+                    } catch (err) {
+                        this.auth.error = 'Network error. Please try again.';
+                    } finally {
+                        this.auth.loading = false;
+                    }
+                },
+
+                logout() {
+                    localStorage.removeItem('dashboardku_token');
+                    localStorage.removeItem('dashboardku_username');
+                    this.auth.token = null;
+                    this.auth.username = '';
+                    location.reload();
+                },
+
+                getHeaders() {
+                    return { 'Authorization': `Bearer ${this.auth.token}` };
+                },
+
+                async loadData() {
+                    await Promise.all([
+                        this.loadProjects(),
+                        this.loadTasks(),
+                        this.loadStats(),
+                        this.loadNotifications()
+                    ]);
+                },
+
+                async loadProjects() {
+                    this.loading.projects = true;
+                    try {
+                        const response = await fetch('/api/projects', { headers: this.getHeaders() });
+                        if (response.ok) {
+                            this.projects = await response.json();
+                        }
+                    } catch (err) {
+                        console.error('Failed to load projects:', err);
+                    } finally {
+                        this.loading.projects = false;
+                    }
+                },
+
+                async loadTasks() {
+                    this.loading.tasks = true;
+                    try {
+                        const response = await fetch('/api/tasks', { headers: this.getHeaders() });
+                        if (response.ok) {
+                            this.tasks = await response.json();
+                        }
+                    } catch (err) {
+                        console.error('Failed to load tasks:', err);
+                    } finally {
+                        this.loading.tasks = false;
+                    }
+                },
+
+                async loadStats() {
+                    try {
+                        const response = await fetch('/api/stats', { headers: this.getHeaders() });
+                        if (response.ok) {
+                            this.stats = await response.json();
+                        }
+                    } catch (err) {
+                        console.error('Failed to load stats:', err);
+                    }
+                },
+
+                async loadNotifications() {
+                    this.loading.logs = true;
+                    try {
+                        const response = await fetch('/api/notifications/logs?limit=20', { headers: this.getHeaders() });
+                        if (response.ok) {
+                            this.notificationLogs = await response.json();
+                        }
+                    } catch (err) {
+                        console.error('Failed to load notifications:', err);
+                    } finally {
+                        this.loading.logs = false;
+                    }
+                },
+
+                get filteredTasks() {
+                    return this.tasks.filter(task => {
+                        const matchesProject = !this.filters.projectId || task.project_id == this.filters.projectId;
+                        const matchesStatus = !this.filters.status || task.status === this.filters.status;
+                        const matchesPriority = !this.filters.priority || task.priority === this.filters.priority;
+                        return matchesProject && matchesStatus && matchesPriority;
+                    }).sort((a, b) => {
+                        const priorityWeight = { high: 3, medium: 2, low: 1 };
+                        const statusWeight = { todo: 3, in_progress: 2, done: 1 };
+                        return statusWeight[b.status] - statusWeight[a.status] || 
+                               priorityWeight[b.priority] - priorityWeight[a.priority];
+                    });
+                },
+
+                openProjectModal(project = null) {
+                    this.editing.project = project;
+                    this.form.projectName = project ? project.name : '';
+                    this.form.projectColor = project ? project.color : '#3b82f6';
+                    this.showing.projectModal = true;
+                },
+
+                closeModals() {
+                    this.showing.projectModal = false;
+                    this.showing.taskModal = false;
+                    this.editing.project = null;
+                    this.editing.task = null;
+                    this.resetForm();
+                },
+
+                resetForm() {
+                    this.form.projectName = '';
+                    this.form.projectColor = '#3b82f6';
+                    this.form.taskTitle = '';
+                    this.form.taskProjectId = null;
+                    this.form.taskPriority = 'medium';
+                    this.form.taskDeadline = '';
+                },
+
+                async saveProject() {
+                    const url = this.editing.project ? `/api/projects/${this.editing.project.id}` : '/api/projects';
+                    const method = this.editing.project ? 'PUT' : 'POST';
+                    const body = {
+                        name: this.form.projectName,
+                        color: this.form.projectColor
+                    };
+
+                    try {
+                        const response = await fetch(url, {
+                            method,
+                            headers: { ...this.getHeaders(), 'Content-Type': 'application/json' },
+                            body: JSON.stringify(body)
+                        });
+
+                        if (response.ok) {
+                            this.showToast(this.editing.project ? 'Project updated!' : 'Project created!', 'success');
+                            this.closeModals();
+                            this.loadProjects();
+                        }
+                    } catch (err) {
+                        this.showToast('Error saving project', 'error');
+                    }
+                },
+
+                async archiveProject(id) {
+                    try {
+                        const response = await fetch(`/api/projects/${id}/archive`, {
+                            method: 'PATCH',
+                            headers: this.getHeaders()
+                        });
+                        if (response.ok) {
+                            this.showToast('Project archived', 'info');
+                            this.loadProjects();
+                        }
+                    } catch (err) {
+                        this.showToast('Error archiving project', 'error');
+                    }
+                },
+
+                openTaskModal(task = null, defaultProjectId = null) {
+                    this.editing.task = task;
+                    this.form.taskTitle = task ? task.title : '';
+                    this.form.taskProjectId = task?.project_id || defaultProjectId || (this.projects[0]?.id || null);
+                    this.form.taskPriority = task?.priority || 'medium';
+                    this.form.taskDeadline = task?.deadline ? new Date(task.deadline).toISOString().slice(0, 16) : '';
+                    this.showing.taskModal = true;
+                },
+
+                editTask(task) {
+                    this.openTaskModal(task);
+                },
+
+                async saveTask() {
+                    const projectId = this.form.taskProjectId;
+                    if (!projectId) {
+                        this.showToast('Please select a project', 'warning');
+                        return;
+                    }
+
+                    const url = this.editing.task ? `/api/tasks/${this.editing.task.id}` : `/api/projects/${projectId}/tasks`;
+                    const method = this.editing.task ? 'PUT' : 'POST';
+                    const body = {
+                        title: this.form.taskTitle,
+                        priority: this.form.taskPriority,
+                        deadline: this.form.taskDeadline || null
+                    };
+
+                    try {
+                        const response = await fetch(url, {
+                            method,
+                            headers: { ...this.getHeaders(), 'Content-Type': 'application/json' },
+                            body: JSON.stringify(body)
+                        });
+
+                        if (response.ok) {
+                            this.showToast(this.editing.task ? 'Task updated!' : 'Task created!', 'success');
+                            this.closeModals();
+                            this.loadTasks();
+                        }
+                    } catch (err) {
+                        this.showToast('Error saving task', 'error');
+                    }
+                },
+
+                async toggleTask(id, completed) {
+                    try {
+                        const response = await fetch(`/api/tasks/${id}/complete`, {
+                            method: 'PATCH',
+                            headers: this.getHeaders()
+                        });
+                        if (response.ok) {
+                            this.loadTasks();
+                            this.loadStats();
+                        }
+                    } catch (err) {
+                        this.showToast('Error toggling task', 'error');
+                    }
+                },
+
+                async deleteTask(id) {
+                    if (!confirm('Delete this task?')) return;
+                    
+                    try {
+                        const response = await fetch(`/api/tasks/${id}`, {
+                            method: 'DELETE',
+                            headers: this.getHeaders()
+                        });
+                        if (response.ok) {
+                            this.showToast('Task deleted', 'info');
+                            this.loadTasks();
+                        }
+                    } catch (err) {
+                        this.showToast('Error deleting task', 'error');
+                    }
+                },
+
+                getProjectTaskCount(projectId) {
+                    return this.tasks.filter(t => t.project_id === projectId).length;
+                },
+
+                getProjectActiveTasks(projectId) {
+                    return this.tasks.filter(t => t.project_id === projectId && t.status !== 'done').length;
+                },
+
+                getProjectName(projectId) {
+                    const project = this.projects.find(p => p.id === projectId);
+                    return project ? project.name : 'Unknown';
+                },
+
+                getProjectColorClass(projectId) {
+                    const project = this.projects.find(p => p.id === projectId);
+                    if (!project) return 'tag-stone';
+                    const colorMap = {
+                        '#3b82f6': 'tag-project-blue',
+                        '#8b5cf6': 'tag-project-purple',
+                        '#10b981': 'tag-project-green',
+                        '#f59e0b': 'tag-project-orange',
+                        '#ec4899': 'tag-project-pink',
+                        '#14b8a6': 'tag-project-teal'
+                    };
+                    return colorMap[project.color] || 'tag-stone';
+                },
+
+                getColorClass(color) {
+                    const map = {
+                        '#3b82f6': 'blue',
+                        '#8b5cf6': 'purple',
+                        '#10b981': 'green',
+                        '#f59e0b': 'orange',
+                        '#ec4899': 'pink',
+                        '#14b8a6': 'teal'
+                    };
+                    return map[color] || 'blue';
+                },
+
+                getPriorityBadgeClass(priority) {
+                    const map = {
+                        low: 'badge-priority-low',
+                        medium: 'badge-priority-medium',
+                        high: 'badge-priority-high'
+                    };
+                    return map[priority] || 'badge-priority-low';
+                },
+
+                isOverdue(deadline, status) {
+                    if (!deadline || status === 'done') return false;
+                    return new Date(deadline) < new Date();
+                },
+
+                isDueToday(deadline) {
+                    if (!deadline) return false;
+                    const today = new Date();
+                    const deadlineDate = new Date(deadline);
+                    return today.toDateString() === deadlineDate.toDateString();
+                },
+
+                formatDeadline(deadlineStr) {
+                    if (!deadlineStr) return '';
+                    const date = new Date(deadlineStr);
+                    const now = new Date();
+                    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                    const deadlineDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+                    const diffDays = Math.ceil((deadlineDay - today) / (1000 * 60 * 60 * 24));
+
+                    if (diffDays === 0) {
+                        return `Today ${date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`;
+                    } else if (diffDays === 1) {
+                        return 'Tomorrow';
+                    } else if (diffDays === -1) {
+                        return 'Yesterday';
+                    } else if (diffDays < -1) {
+                        return 'Overdue';
+                    }
+                    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                },
+
+                formatDate(dateStr) {
+                    if (!dateStr) return '';
+                    return new Date(dateStr).toLocaleString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                },
+
+                showToast(message, type = 'info') {
+                    window.toastStore.add(message, type);
+                },
+
+                viewTasks(projectId) {
+                    this.filters.projectId = projectId;
+                    // Scroll to tasks section
+                    document.getElementById('main-content').scrollIntoView({ behavior: 'smooth' });
+                }
+            }
+        }
+    </script>
+</body>
+</html>
