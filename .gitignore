@@ -94,3 +94,7 @@ test_coverage/
 nox/
 coverage.xml
 .coverage.*
+
+# Config with credentials (local only)
+.mcp.json
+opencode.json
