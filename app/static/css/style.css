@@ -55,6 +55,37 @@
   animation: toast-in 150ms ease-out;
 }
 
+/* ── Kanban board (kanban.js — SortableJS) ── */
+[data-kanban-card] {
+  cursor: grab;
+}
+
+[data-kanban-card]:active {
+  cursor: grabbing;
+}
+
+/* Placeholder selama drag — kartu "hantu" di posisi target */
+[data-kanban-card].kanban-ghost {
+  opacity: 0.4;
+  border-style: dashed;
+  box-shadow: none;
+}
+
+/* Klon kartu yang sedang diangkat — elevasi level 1 (DESIGN.md) */
+[data-kanban-card].kanban-drag {
+  box-shadow: rgba(0, 0, 0, 0.08) 0px 2px 8px 0px;
+}
+
+[data-kanban-card].is-loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+[data-kanban-card].is-done [data-kanban-title] {
+  color: #646B7C;
+  text-decoration: line-through;
+}
+
 /* Input datetime-local: samakan lebar minimal */
 input[type="datetime-local"] {
   min-width: 0;

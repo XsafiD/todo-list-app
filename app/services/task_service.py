@@ -253,6 +253,28 @@ class TaskService:
         db.session.commit()
         return task
 
+    def update_status(self, task_id: int, status: str) -> Task:
+        """Ubah status saja (kanban) — delegasi state machine (03-service #5).
+
+        Args:
+            task_id: ID task.
+            status: "todo" | "in_progress" | "done".
+
+        Returns:
+            Objek Task yang sudah di-commit.
+
+        Raises:
+            ValueError: task tidak ditemukan atau status tidak dikenal.
+        """
+        if status not in STATUS_VALUES:
+            raise ValueError("Status harus todo, in_progress, atau done.")
+        task = db.session.get(Task, task_id)
+        if task is None:
+            raise ValueError("Tugas tidak ditemukan.")
+        task.apply_status(TaskStatus(status))  # state machine jaga completed_at
+        db.session.commit()
+        return task
+
     def toggle_complete(self, task_id: int) -> Task:
         task = db.session.get(Task, task_id)
         if task is None:

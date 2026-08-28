@@ -236,7 +236,7 @@ The system runs predominantly flat. Elevation is reserved for two interaction la
 
 **`sidebar`** — Desktop side navigation.
 - Background `{colors.surface}`, width 240px, right border `1px solid {colors.hairline}`.
-- Nav items: Dashboard, Projects, Tasks, Calendar, Settings.
+- Nav items: Dashboard, Projects, Tasks, Tugas Kanban, Calendar, Settings.
 - Active: `{colors.primary-soft}` background + `{colors.primary}` text.
 
 ### Signature Components
@@ -249,6 +249,18 @@ The system runs predominantly flat. Elevation is reserved for two interaction la
 - Top: Filters (project, status, priority).
 - List: `task-item` stack.
 - Bottom: Pagination.
+
+**`kanban-board`** — Board 3 kolom per status (Todo, Proses, Selesai) — drag & drop untuk ubah status.
+- Grid 3 kolom desktop (`{spacing.md}` gap), stack 1 kolom mobile.
+- Kolom: background `{colors.surface-soft}` 60% alpha, rounded `{rounded.lg}`, border `1px solid {colors.hairline}`; header `{typography.subtitle-md}` + counter pill (`{colors.surface}` bg, `{colors.slate}` text).
+- Kartu di-drop ke kolom lain → POST status via AJAX → toast; gagal → revert posisi.
+- Reorder dalam kolom sama tidak dipersist (tanpa field urutan).
+
+**`kanban-card`** — Kartu task di board, varian kompak `card-task`.
+- Background `{colors.surface}`, rounded `{rounded.lg}`, padding `{spacing.md}`, border `1px solid {colors.hairline}`; overdue: left border `4px solid {colors.critical}`.
+- Isi: judul (2-line clamp, link ke detail), `badge-priority`, `tag-project`, `badge-deadline`.
+- Done: judul `{colors.stone}` + strikethrough (`is-done`).
+- Drag: cursor grab; ghost saat drag = opacity 0.4 + border dashed; kartu terangkat = elevasi level 1; fallback keyboard/touch = tombol "Pindah" ‹ › di footer kartu.
 
 **`project-detail`** — Project overview with stats + task list.
 - Header: Project name, color tag, stats (total/active/completed).
@@ -372,7 +384,7 @@ Shortcut global (aktif saat login, diabaikan saat fokus di input/textarea/select
 
 - Dark mode tokens not yet defined — **diputuskan ditunda (2026-08-27, Phase 3)**; didefinisikan saat ada kebutuhan nyata.
 - Calendar view component not specified — **diputuskan ditunda (2026-08-27, Phase 3)**; list + filter deadline dinilai cukup untuk sekarang.
-- Drag-and-drop for task reordering not defined.
+- Drag-and-drop: **sudah dispesifikasikan** untuk `kanban-board` (lihat §Components → Signature Components) — implementasi SortableJS di `static/js/kanban.js`; reorder intra-kolom belum dipersist (menunggu kebutuhan field urutan).
 - Keyboard shortcuts: **sudah dispesifikasikan** (lihat §Components → Keyboard Shortcuts) — implementasi di `static/js/shortcuts.js`.
 
 ---

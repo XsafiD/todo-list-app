@@ -7,7 +7,9 @@ Routes (semua login_required):
   - GET      /tasks/<id>            — detail
   - GET/POST /tasks/<id>/edit       — edit
   - POST     /tasks/<id>/complete   — toggle selesai
+  - POST     /tasks/<id>/status     — ubah status (drag & drop kanban, JSON)
   - POST     /tasks/<id>/delete     — hapus
+  - GET      /tasks/kanban          — board kanban 3 kolom per status
 """
 from flask import Blueprint, abort, flash, jsonify, redirect, render_template, request, url_for
 
@@ -20,6 +22,13 @@ task_bp = Blueprint("task", __name__, url_prefix="/tasks")
 
 _ALLOWED_STATUS = {value for value, _ in STATUS_CHOICES}
 _ALLOWED_PRIORITY = {value for value, _ in PRIORITY_CHOICES}
+
+# Kolom papan kanban — urutan tampilan board (key = nilai enum TaskStatus)
+KANBAN_COLUMNS = [
+    ("todo", "Todo"),
+    ("in_progress", "Proses"),
+    ("done", "Selesai"),
+]
 
 
 def _get_task_or_404(task_id: int):
@@ -134,6 +143,44 @@ def complete(task_id: int):
         )
     flash(message, "success")
     return redirect(request.form.get("next") or url_for("task.detail", task_id=task_id))
+
+
+@task_bp.route("/kanban")
+@login_required
+def kanban():
+    """Board kanban — 3 kolom per status, task dikelompokkan di controller."""
+    grouped: dict[str, list] = {key: [] for key, _ in KANBAN_COLUMNS}
+    for task in task_service.get_all():
+        grouped.setdefault(task.status, []).append(task)
+    return render_template("task/kanban.html", columns=KANBAN_COLUMNS, grouped=grouped)
+
+
+@task_bp.route("/<int:task_id>/status", methods=["POST"])
+@login_required
+def update_status(task_id: int):
+    payload = request.get_json(silent=True) or {}
+    status = payload.get("status", "")
+    if status not in _ALLOWED_STATUS:
+        message = "Status harus todo, in_progress, atau done."
+        if _wants_json():
+            return jsonify(status="error", error="invalid_status", message=message), 400
+        flash(message, "error")
+        return redirect(url_for("task.kanban"))
+    try:
+        task = task_service.update_status(task_id, status)
+    except ValueError:
+        if _wants_json():
+            return jsonify(status="error", error="not_found", message="Tugas tidak ditemukan."), 404
+        abort(404)
+    message = f"Status tugas '{task.title}' diperbarui."
+    if _wants_json():
+        return jsonify(
+            status="ok",
+            data={"id": task.id, "title": task.title, "status": task.status.value},
+            message=message,
+        )
+    flash(message, "success")
+    return redirect(url_for("task.kanban"))
 
 
 @task_bp.route("/<int:task_id>/delete", methods=["POST"])
