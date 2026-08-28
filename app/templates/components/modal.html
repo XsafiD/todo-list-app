@@ -1,12 +1,18 @@
 {# components/modal.html — macro modal konfirmasi (wired via modal.js) #}
 
-{% macro confirm_modal(modal_id, title, message, action_url, button_label="Hapus", icon="fa-trash") -%}
+{%- set _tone = {
+  "critical": {"circle": "bg-critical/10 text-critical", "button": "bg-critical hover:opacity-90"},
+  "primary":  {"circle": "bg-primary/10 text-primary",   "button": "bg-primary hover:bg-primary-deep"},
+} -%}
+
+{#- Modal statik: satu subjek pasti (halaman detail) — action_url dikunci saat render. -#}
+{% macro confirm_modal(modal_id, title, message, action_url, button_label="Hapus", icon="fa-trash", tone="critical") -%}
 <div id="{{ modal_id }}" data-modal class="fixed inset-0 z-50 hidden items-center justify-center p-0 md:p-4" role="dialog" aria-modal="true" aria-labelledby="{{ modal_id }}-title">
   <div data-modal-overlay class="absolute inset-0 bg-ink-deep/40"></div>
   <div class="relative flex h-dvh w-full flex-col rounded-none bg-surface p-6 shadow-xl md:h-auto md:max-w-md md:rounded-xl">
     <div class="flex flex-1 items-center">
       <div class="flex items-start gap-4">
-        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-critical/10 text-critical">
+        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full {{ _tone[tone]["circle"] }}">
           <i class="fa-solid {{ icon }}" aria-hidden="true"></i>
         </span>
         <div class="min-w-0">
@@ -23,7 +29,43 @@
       <form method="post" action="{{ action_url }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button type="submit"
-                class="rounded-full bg-critical px-4 py-2 text-[14px] font-medium text-white transition hover:opacity-90 active:scale-[0.98]">
+                class="rounded-full {{ _tone[tone]["button"] }} px-4 py-2 text-[14px] font-medium text-white transition active:scale-[0.98]">
+          {{ button_label }}
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+{%- endmacro %}
+
+{#- Modal dinamis: SATU modal dipakai banyak tombol pemicu — tombol membawa
+    data-confirm-action / data-confirm-title / data-confirm-message, diisikan
+    modal.js sebelum modal dibuka. Untuk halaman list (N item, 1 modal). -#}
+{% macro confirm_modal_dynamic(modal_id, title, message, button_label, icon="fa-trash", tone="critical", next_url=None) -%}
+<div id="{{ modal_id }}" data-modal class="fixed inset-0 z-50 hidden items-center justify-center p-0 md:p-4" role="dialog" aria-modal="true" aria-labelledby="{{ modal_id }}-title">
+  <div data-modal-overlay class="absolute inset-0 bg-ink-deep/40"></div>
+  <div class="relative flex h-dvh w-full flex-col rounded-none bg-surface p-6 shadow-xl md:h-auto md:max-w-md md:rounded-xl">
+    <div class="flex flex-1 items-center">
+      <div class="flex items-start gap-4">
+        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full {{ _tone[tone]["circle"] }}">
+          <i class="fa-solid {{ icon }}" aria-hidden="true"></i>
+        </span>
+        <div class="min-w-0">
+          <h3 data-confirm-title id="{{ modal_id }}-title" class="text-[16px] font-medium text-ink-deep">{{ title }}</h3>
+          <p data-confirm-message class="mt-1 text-[14px] text-slate">{{ message }}</p>
+        </div>
+      </div>
+    </div>
+    <div class="mt-6 flex justify-end gap-3">
+      <button type="button" data-modal-close
+              class="rounded-full border border-primary px-4 py-2 text-[14px] font-medium text-primary transition hover:bg-primary-soft">
+        Batal
+      </button>
+      <form data-confirm-form method="post" action="">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        {% if next_url %}<input type="hidden" name="next" value="{{ next_url }}">{% endif %}
+        <button type="submit"
+                class="rounded-full {{ _tone[tone]["button"] }} px-4 py-2 text-[14px] font-medium text-white transition active:scale-[0.98]">
           {{ button_label }}
         </button>
       </form>

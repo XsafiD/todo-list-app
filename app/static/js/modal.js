@@ -39,7 +39,19 @@
     document.querySelectorAll("[data-modal-target]").forEach(function (btn) {
       btn.addEventListener("click", function () {
         var modal = document.getElementById(btn.getAttribute("data-modal-target"));
-        if (modal) openModal(modal);
+        if (!modal) return;
+
+        /* Modal dinamis: pemicu membawa konten & action — isi hooks dulu */
+        if (btn.hasAttribute("data-confirm-action")) {
+          var form = modal.querySelector("[data-confirm-form]");
+          if (form) form.setAttribute("action", btn.getAttribute("data-confirm-action"));
+          var title = modal.querySelector("[data-confirm-title]");
+          if (title) title.textContent = btn.getAttribute("data-confirm-title") || title.textContent;
+          var message = modal.querySelector("[data-confirm-message]");
+          if (message) message.textContent = btn.getAttribute("data-confirm-message") || "";
+        }
+
+        openModal(modal);
       });
     });
 

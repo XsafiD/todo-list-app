@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% from "components/page_path.html" import page_path %}
 {% from "components/badge.html" import deadline_badge, priority_badge, project_tag %}
+{% from "components/modal.html" import confirm_modal_dynamic %}
 
 {% block title %}Tugas Kanban · dash.xsadev{% endblock %}
 
@@ -51,18 +52,30 @@
             {% if task.deadline %}{{ deadline_badge(task.deadline_state, task.deadline_label) }}{% endif %}
           </div>
 
-          {# Fallback keyboard/touch: pindah kolom tanpa drag #}
-          <div class="mt-2 flex justify-between" data-kanban-moves>
+          {# Fallback keyboard/touch: pindah kolom tanpa drag; done = arsipkan #}
+          <div class="mt-2 flex items-center justify-between" data-kanban-moves>
             <button type="button" data-kanban-move="prev"
                     class="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[12px] font-medium text-slate transition hover:bg-surface-soft hover:text-ink"
                     aria-label="Pindah ke kolom sebelumnya">
               <i class="fa-solid fa-chevron-left text-[11px]" aria-hidden="true"></i>Pindah
             </button>
-            <button type="button" data-kanban-move="next"
-                    class="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[12px] font-medium text-slate transition hover:bg-surface-soft hover:text-ink"
-                    aria-label="Pindah ke kolom berikutnya">
-              Pindah<i class="fa-solid fa-chevron-right text-[11px]" aria-hidden="true"></i>
-            </button>
+            <div class="flex items-center gap-1">
+              <button type="button" data-kanban-move="next"
+                      class="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[12px] font-medium text-slate transition hover:bg-surface-soft hover:text-ink"
+                      aria-label="Pindah ke kolom berikutnya">
+                Pindah<i class="fa-solid fa-chevron-right text-[11px]" aria-hidden="true"></i>
+              </button>
+              {% if task.status == 'done' %}
+              <button type="button" data-modal-target="modal-archive-task" aria-haspopup="dialog"
+                      data-confirm-action="{{ url_for('task.archive', task_id=task.id) }}"
+                      data-confirm-title="Arsipkan tugas?"
+                      data-confirm-message="Tugas '{{ task.title }}' akan dipindahkan ke Arsip. Kamu bisa mengeluarkannya kembali dari halaman Arsip."
+                      class="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[12px] font-medium text-slate transition hover:bg-surface-soft hover:text-warning"
+                      aria-label="Arsipkan tugas {{ task.title }}">
+                <i class="fa-solid fa-box-archive text-[11px]" aria-hidden="true"></i>Arsipkan
+              </button>
+              {% endif %}
+            </div>
           </div>
         </article>
         {% endfor %}
@@ -74,6 +87,16 @@
     {% endfor %}
   </div>
 </section>
+
+{# ── Modal konfirmasi arsip — SATU modal untuk semua kartu, isi via modal.js ── #}
+{{ confirm_modal_dynamic(
+  "modal-archive-task",
+  "Arsipkan tugas?",
+  "Tugas akan dipindahkan ke Arsip.",
+  "Arsipkan",
+  icon="fa-box-archive",
+  tone="primary",
+) }}
 {% endblock %}
 
 {% block scripts %}

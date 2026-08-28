@@ -37,6 +37,7 @@ class TaskView:
     deadline_state: str  # "" | "upcoming" | "today" | "overdue"
     deadline_label: str  # "2 hari lagi", "Hari ini 14:00", "Terlambat 1 hari", ""
     completed_at: datetime | None
+    archived_at: datetime | None
     created_at: datetime
 
 
@@ -95,6 +96,7 @@ def _to_view(task: Task, now: datetime) -> TaskView:
         deadline_state=state,
         deadline_label=_deadline_label(state, task.deadline, now),
         completed_at=task.completed_at,
+        archived_at=task.archived_at,
         created_at=task.created_at,
     )
 
@@ -134,9 +136,14 @@ class TaskService:
 
     # ── Read ──
     def get_all(self, filters: dict | None = None, limit: int | None = None) -> list[TaskView]:
-        """Filter: status, priority, project_id. Sort: aktif dulu, lalu terbaru."""
+        """Task AKTIF (belum terarsip). Filter: status, priority, project_id.
+
+        Sort: aktif dulu, lalu terbaru.
+        """
         now = datetime.now()
-        query = Task.query.options(joinedload(Task.project))  # anti N+1 (17-performance #3)
+        query = Task.query.options(joinedload(Task.project)).filter(  # anti N+1 (17-performance #3)
+            Task.archived_at.is_(None)
+        )
         filters = filters or {}
 
         if filters.get("status"):
@@ -154,6 +161,21 @@ class TaskService:
         )
         if limit:
             query = query.limit(limit)
+        return [_to_view(t, now) for t in query.all()]
+
+    def get_archived(self, filters: dict | None = None) -> list[TaskView]:
+        """Task TERARSIP — sort `archived_at` terbaru dulu. Filter: project_id."""
+        now = datetime.now()
+        query = Task.query.options(joinedload(Task.project)).filter(
+            Task.archived_at.is_not(None)
+        )
+        filters = filters or {}
+
+        project_id = filters.get("project_id")
+        if project_id is not None:
+            query = query.filter(Task.project_id == project_id)
+
+        query = query.order_by(Task.archived_at.desc(), Task.id.desc())
         return [_to_view(t, now) for t in query.all()]
 
     def get_by_id(self, task_id: int) -> TaskView | None:
@@ -280,6 +302,44 @@ class TaskService:
         if task is None:
             raise ValueError("Tugas tidak ditemukan.")
         task.toggle_complete()  # delegasi state machine model
+        db.session.commit()
+        return task
+
+    def archive(self, task_id: int) -> Task:
+        """Arsipkan task done — delegasi state machine (03-service #5).
+
+        Args:
+            task_id: ID task.
+
+        Returns:
+            Objek Task yang sudah di-commit.
+
+        Raises:
+            ValueError: task tidak ditemukan atau bukan berstatus done.
+        """
+        task = db.session.get(Task, task_id)
+        if task is None:
+            raise ValueError("Tugas tidak ditemukan.")
+        task.archive()
+        db.session.commit()
+        return task
+
+    def unarchive(self, task_id: int) -> Task:
+        """Keluarkan task dari arsip — status tetap done.
+
+        Args:
+            task_id: ID task.
+
+        Returns:
+            Objek Task yang sudah di-commit.
+
+        Raises:
+            ValueError: task tidak ditemukan.
+        """
+        task = db.session.get(Task, task_id)
+        if task is None:
+            raise ValueError("Tugas tidak ditemukan.")
+        task.unarchive()
         db.session.commit()
         return task
 

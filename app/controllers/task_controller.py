@@ -8,7 +8,9 @@ Routes (semua login_required):
   - GET/POST /tasks/<id>/edit       — edit
   - POST     /tasks/<id>/complete   — toggle selesai
   - POST     /tasks/<id>/status     — ubah status (drag & drop kanban, JSON)
-  - POST     /tasks/<id>/delete     — hapus
+  - POST     /tasks/<id>/archive    — arsipkan task done
+  - POST     /tasks/<id>/unarchive  — keluarkan dari arsip
+  - POST     /tasks/<id>/delete     — hapus (next= kembali ke halaman asal)
   - GET      /tasks/kanban          — board kanban 3 kolom per status
 """
 from flask import Blueprint, abort, flash, jsonify, redirect, render_template, request, url_for
@@ -61,6 +63,14 @@ def _form_payload(form: TaskForm) -> dict:
 def _wants_json() -> bool:
     """Request AJAX dari modul JS mengirim header ini (10-api-response.md #4)."""
     return request.headers.get("X-Requested-With") == "fetch"
+
+
+def _safe_next(fallback: str) -> str:
+    """URL tujuan dari form field `next` — hanya path relatif (anti open redirect)."""
+    next_url = request.form.get("next") or ""
+    if next_url.startswith("/") and not next_url.startswith("//"):
+        return next_url
+    return fallback
 
 
 @task_bp.route("/")
@@ -183,6 +193,31 @@ def update_status(task_id: int):
     return redirect(url_for("task.kanban"))
 
 
+@task_bp.route("/<int:task_id>/archive", methods=["POST"])
+@login_required
+def archive(task_id: int):
+    if task_service.get_by_id(task_id) is None:
+        abort(404)
+    try:
+        task = task_service.archive(task_id)
+    except ValueError as err:
+        flash(str(err), "error")
+        return redirect(url_for("task.kanban"))
+    flash(f"Tugas '{task.title}' dipindahkan ke Arsip.", "success")
+    return redirect(_safe_next(url_for("task.kanban")))
+
+
+@task_bp.route("/<int:task_id>/unarchive", methods=["POST"])
+@login_required
+def unarchive(task_id: int):
+    try:
+        task = task_service.unarchive(task_id)
+    except ValueError:
+        abort(404)
+    flash(f"Tugas '{task.title}' dikeluarkan dari Arsip — kembali ke kolom Selesai.", "success")
+    return redirect(_safe_next(url_for("archive.index")))
+
+
 @task_bp.route("/<int:task_id>/delete", methods=["POST"])
 @login_required
 def delete(task_id: int):
@@ -191,4 +226,4 @@ def delete(task_id: int):
     except ValueError:
         abort(404)
     flash(f"Tugas '{task.title}' dihapus.", "success")
-    return redirect(url_for("task.index"))
+    return redirect(_safe_next(url_for("task.index")))

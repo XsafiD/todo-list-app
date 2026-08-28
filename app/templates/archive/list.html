@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% from "components/badge.html" import priority_badge, project_tag %}
+{% from "components/card.html" import empty_state %}
+{% from "components/modal.html" import confirm_modal_dynamic %}
+{% from "components/page_path.html" import page_path %}
+
+{% block title %}Arsip · dash.xsadev{% endblock %}
+
+{% block page_title %}Arsip{% endblock %}
+
+{% block authenticated_content %}
+{{ page_path([{"label": "Arsip"}]) }}
+
+{%- set back_url = url_for('archive.index', project_id=filters.get('project_id')) -%}
+
+<div class="flex flex-wrap items-center justify-between gap-3">
+  <p class="text-[14px] text-charcoal">Riwayat tugas selesai yang telah diarsipkan.</p>
+  <a href="{{ url_for('task.kanban') }}"
+     class="inline-flex items-center gap-2 rounded-full border border-primary px-4 py-2 text-[14px] font-medium text-primary transition hover:bg-primary-soft">
+    <i class="fa-solid fa-table-cells-large text-[12px]" aria-hidden="true"></i>Ke Kanban
+  </a>
+</div>
+
+{# ── Filter bar ── #}
+<form method="get" class="mt-6 flex flex-wrap items-center gap-3" aria-label="Filter arsip">
+  <div class="relative">
+    <select name="project_id" aria-label="Filter project"
+            class="appearance-none rounded-full border border-hairline bg-surface py-2 pl-4 pr-9 text-[14px] text-charcoal focus:border-primary focus:outline-none focus:ring-3 focus:ring-primary/10">
+      <option value="">Semua Project</option>
+      {% for project in projects_all %}
+      <option value="{{ project.id }}" {% if filters.get('project_id') == project.id %}selected{% endif %}>{{ project.name }}</option>
+      {% endfor %}
+    </select>
+    <span class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-steel">
+      <i class="fa-solid fa-chevron-down text-[12px]" aria-hidden="true"></i>
+    </span>
+  </div>
+
+  {% if filters %}
+  <a href="{{ url_for('archive.index') }}" class="text-[14px] font-medium text-charcoal transition hover:text-critical">
+    <i class="fa-solid fa-xmark mr-1" aria-hidden="true"></i>Reset
+  </a>
+  {% endif %}
+</form>
+
+{# ── Arsip list ── #}
+{% if tasks %}
+<section class="mt-6 space-y-4" aria-label="Daftar tugas terarsip">
+  {% for task in tasks %}
+  <div class="flex items-center gap-3 rounded-lg border border-hairline bg-surface p-4 min-h-[56px] transition-shadow duration-150 hover:shadow-sm">
+    <span class="shrink-0 text-[22px] leading-none text-success/70" aria-hidden="true">
+      <i class="fa-solid fa-circle-check"></i>
+    </span>
+
+    <a href="{{ url_for('task.detail', task_id=task.id) }}" class="min-w-0 flex-1">
+      <p class="truncate text-[16px] font-medium text-stone line-through" title="{{ task.title }}">{{ task.title }}</p>
+      <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+        {{ project_tag(task.project_name, task.project_color) }}
+        <span class="inline-flex items-center gap-1 text-[12px] text-steel">
+          <i class="fa-solid fa-circle-check text-[11px]" aria-hidden="true"></i>Selesai {{ task.completed_at | fmt_date }}
+        </span>
+        <span class="inline-flex items-center gap-1 text-[12px] text-steel">
+          <i class="fa-solid fa-box-archive text-[11px]" aria-hidden="true"></i>Diarsipkan {{ task.archived_at | fmt_date }}
+        </span>
+      </div>
+    </a>
+
+    <div class="hidden shrink-0 sm:flex">
+      {{ priority_badge(task.priority) }}
+    </div>
+
+    <div class="flex shrink-0 items-center gap-1">
+      <form method="post" action="{{ url_for('task.unarchive', task_id=task.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="next" value="{{ back_url }}">
+        <button type="submit"
+                class="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-[12px] font-medium text-slate transition hover:bg-surface-soft hover:text-success"
+                aria-label="Keluarkan tugas {{ task.title }} dari arsip">
+          <i class="fa-solid fa-rotate-left text-[12px]" aria-hidden="true"></i><span class="hidden md:inline">Buka Kembali</span>
+        </button>
+      </form>
+      <button type="button" data-modal-target="modal-delete-archived-task" aria-haspopup="dialog"
+              data-confirm-action="{{ url_for('task.delete', task_id=task.id) }}"
+              data-confirm-title="Hapus tugas permanen?"
+              data-confirm-message="Tugas '{{ task.title }}' akan dihapus permanen dan tidak bisa dikembalikan."
+              class="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-[12px] font-medium text-slate transition hover:bg-surface-soft hover:text-critical"
+              aria-label="Hapus tugas {{ task.title }} permanen">
+        <i class="fa-solid fa-trash text-[12px]" aria-hidden="true"></i><span class="hidden md:inline">Hapus</span>
+      </button>
+    </div>
+  </div>
+  {% endfor %}
+</section>
+{% else %}
+<section class="mt-6">
+  {% if filters %}
+  {{ empty_state("fa-box-archive", "Tidak ada arsip", "Tidak ada tugas terarsip yang cocok dengan filter.") }}
+  {% else %}
+  {{ empty_state("fa-box-archive", "Belum ada arsip", "Tugas selesai yang diarsipkan dari Kanban akan tampil di sini.") }}
+  {% endif %}
+</section>
+{% endif %}
+
+{# ── Modal konfirmasi hapus — SATU modal untuk semua item, isi via modal.js ── #}
+{{ confirm_modal_dynamic(
+  "modal-delete-archived-task",
+  "Hapus tugas permanen?",
+  "Tugas akan dihapus permanen.",
+  "Hapus Permanen",
+  icon="fa-trash",
+  tone="critical",
+  next_url=back_url,
+) }}
+{% endblock %}

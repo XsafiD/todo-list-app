@@ -132,6 +132,7 @@ class Task(db.Model):
     )
     deadline: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    archived_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
 
     project: Mapped[Project | None] = relationship(back_populates="tasks")
@@ -141,13 +142,18 @@ class Task(db.Model):
 
     # ── State machine (transisi via method model — 02-model.md #3) ──
     def apply_status(self, new_status: "TaskStatus") -> None:
-        """Set status + jaga `completed_at` konsisten (done = beri timestamp, lainnya hapus)."""
+        """Set status + jaga `completed_at` konsisten (done = beri timestamp, lainnya hapus).
+
+        Task yang meninggalkan `done` otomatis keluar dari arsip — invariant:
+        task terarsip selalu berstatus done.
+        """
         self.status = new_status
         if new_status == TaskStatus.DONE:
             if self.completed_at is None:
                 self.completed_at = _utcnow()
         else:
             self.completed_at = None
+            self.archived_at = None
 
     def mark_done(self) -> None:
         self.apply_status(TaskStatus.DONE)
@@ -160,6 +166,23 @@ class Task(db.Model):
             self.reopen()
         else:
             self.mark_done()
+
+    def archive(self) -> None:
+        """Transisi: done → terarsipkan (set `archived_at`). Idempotent.
+
+        Raises:
+            ValueError: task belum/bukan done — arsip hanya untuk tugas selesai.
+        """
+        if self.status != TaskStatus.DONE:
+            raise ValueError(
+                f"Tugas berstatus '{self.status.value}' tidak dapat diarsipkan. Hanya 'done'."
+            )
+        if self.archived_at is None:
+            self.archived_at = _utcnow()
+
+    def unarchive(self) -> None:
+        """Transisi: terarsipkan → aktif (clear `archived_at`, status tetap done)."""
+        self.archived_at = None
 
 
 class Reminder(db.Model):

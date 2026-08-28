@@ -33,7 +33,7 @@ def _register_blueprints(app: Flask) -> None:
     Loop + try/except ImportError agar foundation tidak crash saat modul
     belum ada (01-controller.md #6).
     """
-    for module_name in ("main", "auth", "project", "task"):
+    for module_name in ("main", "auth", "project", "task", "archive"):
         try:
             module = import_module(f"app.controllers.{module_name}_controller")
         except ImportError:

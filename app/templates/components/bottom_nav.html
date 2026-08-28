@@ -1,7 +1,7 @@
 {# components/bottom_nav.html — navigasi bawah (mobile only) #}
 {% set nav = request.endpoint or '' %}
 <nav class="fixed inset-x-0 bottom-0 z-40 border-t border-hairline bg-surface md:hidden" aria-label="Navigasi utama">
-  <div class="grid grid-cols-3">
+  <div class="grid grid-cols-4">
     <a href="{{ url_for('main.dashboard') }}"
        class="flex flex-col items-center gap-1 py-2.5 text-[12px] font-medium
               {% if nav.startswith('main.') %}text-primary-deep{% else %}text-slate{% endif %}">
@@ -19,6 +19,12 @@
               {% if nav.startswith('task.') %}text-primary-deep{% else %}text-slate{% endif %}">
       <i class="fa-solid fa-list-check text-[18px]" aria-hidden="true"></i>
       Tugas
+    </a>
+    <a href="{{ url_for('archive.index') }}"
+       class="flex flex-col items-center gap-1 py-2.5 text-[12px] font-medium
+              {% if nav.startswith('archive.') %}text-primary-deep{% else %}text-slate{% endif %}">
+      <i class="fa-solid fa-box-archive text-[18px]" aria-hidden="true"></i>
+      Arsip
     </a>
   </div>
 </nav>
