@@ -1,134 +1,150 @@
 # Dashboardku 🚀
 
-Personal Task Management System dengan notifikasi webhook (WAHA/WhatsApp) — pengganti Todoist yang bisa dikustomisasi penuh.
+Personal Task Management System dengan project organization, task tracking, dan dashboard analytics — pengganti Todoist yang bisa dikustomisasi penuh.
 
-![Status](https://img.shields.io/badge/status-production--ready-brightgreen) ![Phases](https://img.shields.io/badge/phases-5%2F5%20complete-blue) ![License](https://img.shields.io/badge/license-MIT-lightgrey)
+![Status](https://img.shields.io/badge/status-beta-yellow) ![Phases](https://img.shields.io/badge/phases-3%2F5%20complete-blue) ![License](https://img.shields.io/badge/license-MIT-lightgrey) ![Flask](https://img.shields.io/badge/flask-3.0.3-green)
 
 ## ✨ Fitur
 
 - **Task Management** — CRUD task dengan priority, status, deadline, dan auto-completion timestamp
 - **Project Organization** — project berwarna dengan soft-delete (archive)
-- **Flexible Reminders** — 3 tipe reminder:
-  - `day_h` — otomatis notify di hari deadline (auto-created)
-  - `relative` — X menit/jam/hari sebelum deadline
-  - `absolute` — di tanggal & jam spesifik
-- **Webhook Notifications** — POST ke WAHA/endpoint apapun dengan custom headers & template
-- **Retry Mechanism** — exponential backoff untuk pengiriman gagal
-- **Notification Logs** — audit trail semua notifikasi (status, response code, retry count)
-- **Single-User Auth** — bcrypt password + HMAC-signed token (Basic/Bearer/X-API-Key)
-- **Background Scheduler** — APScheduler cek deadline tiap menit tanpa blocking API
+- **Dashboard Analytics** — stats cards (total, completed, overdue), project grid, task overview
+- **Smart Filtering** — filter task by project, status, priority dengan autosubmit
+- **Task State Machine** — todo → in_progress → done dengan toggle complete
+- **Day-H Reminder** — reminder otomatis di hari deadline (auto-created)
+- **Single-User Auth** — bcrypt password + Flask cookie-based session
+- **Responsive Design** — mobile-first dengan bottom nav, FAB, modal full-screen
+- **Accessibility** — Lighthouse a11y 100, keyboard shortcuts (n=task baru, /=filter), ARIA labels
 
 ## 🛠️ Tech Stack
 
 | Layer | Teknologi |
 |-------|-----------|
-| Backend | FastAPI (Python 3.11+), SQLAlchemy 2.0, Alembic |
+| Backend | Flask 3.0.3, Flask-SQLAlchemy, Flask-WTF, Jinja2 |
 | Database | MySQL 8.0 (Docker) |
-| Scheduler | APScheduler (AsyncIO) |
-| Frontend | Vanilla HTML + Alpine.js 3 + Tailwind CSS |
-| Deployment | Docker Compose |
+| Frontend | Vanilla HTML + Tailwind CSS (CDN) + Font Awesome v6 (CDN) |
+| JavaScript | Vanilla JS (IIFE, strict-mode, no framework) |
+| Testing | pytest, conftest SQLite in-memory |
+| Deployment | Docker (MySQL only for now) |
 
 ## ⚡ Quick Start
 
-### Docker (Recommended)
+### Local Development (via venv)
 
 ```bash
-# 1. Build & start
-docker compose up --build -d
-
-# 2. Jalankan migrasi database
-docker compose exec dashboardku alembic upgrade head
-
-# 3. Akses aplikasi
-open http://localhost:8000        # Frontend
-open http://localhost:8000/docs   # Swagger UI
-```
-
-### Local Development
-
-```bash
-# Setup environment
+# 1. Setup environment
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 
-# Konfigurasi
-cp .env.example .env    # edit DB_HOST=localhost untuk local
+# 2. Konfigurasi
+cp .env.example .env
 
-# Start MySQL saja via Docker
+# 3. Start MySQL via Docker
 docker compose up -d mysql
 
-# Migrasi & jalankan server
+# 4. Migrasi database
 alembic upgrade head
-uvicorn app.main:app --reload --port 8000
+
+# 5. Seed default user
+flask create-user
+
+# 6. Jalankan Flask dev server
+flask run
 ```
 
+**Akses aplikasi**: http://localhost:5000
+
 **Default login**: `admin` / `changeme` — **ganti di `.env` sebelum production!**
+
+### Makefile Shortcut
+
+```bash
+# Semua langkah di atas dalam satu command
+make mysql-up && make migrate-up && make seed-user && make dev
+```
 
 ## 📁 Project Structure
 
 ```
 dashboardku/
 ├── app/
-│   ├── main.py                  # FastAPI entry point + scheduler lifecycle
-│   ├── config.py                # Pydantic settings (.env)
-│   ├── database.py              # SQLAlchemy engine & session
-│   ├── models.py                # 5 ORM models
-│   ├── schemas.py               # Pydantic request/response schemas
-│   ├── security.py              # bcrypt + HMAC token
-│   ├── api/
-│   │   ├── dependencies.py      # require_auth (Basic/Bearer/API-Key)
-│   │   └── routes/              # auth, projects, tasks, reminders, webhooks, stats
-│   ├── services/
-│   │   ├── scheduler.py         # APScheduler + reminder checker
-│   │   ├── webhook.py           # HTTP POST + exponential backoff retry
-│   │   └── notification.py      # Template engine
-│   └── static/
-│       ├── index.html           # SPA (login + dashboard + modals)
-│       ├── css/style.css        # Design system (DESIGN.md)
-│       └── js/app.js
+│   ├── __init__.py              # Flask app factory + blueprint register
+│   ├── config.py                # Flask config (env-based)
+│   ├── extensions.py            # db, csrf instances
+│   ├── models.py                # ORM models (User, Project, Task, Reminder, NotificationLog)
+│   ├── controllers/             # Blueprint per domain
+│   │   ├── auth_controller.py   # auth_bp: login, logout
+│   │   ├── project_controller.py# project_bp: CRUD + archive + dashboard
+│   │   └── task_controller.py   # task_bp: CRUD + complete toggle
+│   ├── services/                # Business Layer
+│   │   ├── auth_service.py      # verify_credentials, session management
+│   │   ├── project_service.py   # CRUD + archive
+│   │   └── task_service.py      # CRUD + toggle + day_h sync
+│   ├── forms/                   # WTForms
+│   │   ├── auth_forms.py
+│   │   ├── project_forms.py
+│   │   └── task_forms.py
+│   ├── templates/               # Jinja2 templates
+│   │   ├── base.html
+│   │   ├── components/          # badge, card, form, modal, navbar
+│   │   ├── auth/
+│   │   ├── dashboard/
+│   │   ├── project/
+│   │   └── task/
+│   ├── static/
+│   │   ├── css/style.css        # Tailwind CDN + custom
+│   │   └── js/
+│   │       ├── app.js
+│   │       ├── modal.js
+│   │       ├── form.js
+│   │       ├── dashboard.js
+│   │       ├── task.js
+│   │       └── shortcuts.js
+│   └── utils/
+│       ├── decorators.py        # login_required
+│       └── filters.py           # Custom Jinja2 filters
 ├── alembic/                     # Migrations
-├── docs/                        # Phase summaries, testing guide
-├── docker-compose.yml
-├── Dockerfile
+├── archive/                     # Kode FastAPI lama (referensi history)
+├── docs/                        # Phase summaries, coding standards
+├── DESIGN.md                    # Design system (warna, tipografi, komponen)
+├── docker-compose.yml           # MySQL service only
 ├── Makefile
 └── requirements.txt
 ```
 
-## 🌐 API Endpoints
+## 🌐 Routes
 
 | Method | Endpoint | Deskripsi |
 |--------|----------|-----------|
-| POST | `/api/login` | Dapatkan bearer token |
-| GET | `/api/me` | Info user aktif |
-| GET/POST | `/api/projects` | List / buat project |
-| GET/PUT/DELETE | `/api/projects/{id}` | Detail / update / hapus |
-| PATCH | `/api/projects/{id}/archive` | Archive/unarchive |
-| GET | `/api/tasks` | List semua task (+filter status/project) |
-| GET/POST | `/api/projects/{id}/tasks` | Task per project |
-| GET/PUT/DELETE | `/api/tasks/{id}` | Detail / update / hapus |
-| PATCH | `/api/tasks/{id}/complete` | Toggle completion |
-| GET/POST | `/api/tasks/{id}/reminders` | Reminder per task |
-| PUT/DELETE | `/api/reminders/{id}` | Update / hapus reminder |
-| GET/POST | `/api/webhook/config` | Konfigurasi webhook |
-| GET | `/api/webhook/test` | Kirim test notification |
-| GET | `/api/notifications/logs` | Log notifikasi (+filter) |
-| GET | `/api/stats` | Statistik dashboard |
+| GET/POST | `/auth/login` | Login form / submit |
+| GET | `/auth/logout` | Logout |
+| GET | `/` | Dashboard (stats + project grid) |
+| GET | `/projects` | List semua project |
+| GET/POST | `/projects/create` | Form buat project |
+| GET/POST | `/projects/<id>/edit` | Form edit project |
+| POST | `/projects/<id>/delete` | Hapus project |
+| POST | `/projects/<id>/archive` | Archive/unarchive |
+| GET | `/projects/<id>` | Detail project + task list |
+| GET | `/tasks` | List semua task (+filter project/status/priority) |
+| GET/POST | `/tasks/create` | Form buat task |
+| GET/POST | `/tasks/<id>/edit` | Form edit task |
+| POST | `/tasks/<id>/delete` | Hapus task |
+| POST | `/tasks/<id>/complete` | Toggle completion (AJAX/PRG fallback) |
+| GET | `/tasks/<id>` | Detail task |
 | GET | `/health` | Health check |
-| GET | `/scheduler/status` | Status scheduler |
-
-Dokumentasi interaktif lengkap: **http://localhost:8000/docs**
 
 ## 🔧 Makefile Commands
 
 | Command | Deskripsi |
 |---------|-----------|
-| `make dev` | Jalankan dev server lokal |
-| `make docker-up` / `docker-down` | Start/stop containers |
-| `make migrate-up` | Apply migrations |
+| `make dev` | Jalankan Flask dev server (venv, port 5000) |
+| `make mysql-up` / `mysql-down` | Start/stop MySQL container |
+| `make migrate-up` / `migrate-down` | Apply/rollback migrations |
 | `make migrate-revision MESSAGE="..."` | Buat migration baru |
+| `make seed-user` | Create/reset seed user (dari .env) |
 | `make mysql-shell` | Masuk MySQL CLI |
-| `make log` | Lihat logs |
+| `make mysql-logs` | Lihat MySQL logs |
 | `make help` | Semua commands |
 
 ## 🔐 Konfigurasi Environment
@@ -141,8 +157,7 @@ Salin `.env.example` → `.env` lalu sesuaikan:
 | `APP_USERNAME` | ✅ | Username login |
 | `APP_PASSWORD` | ✅* | Password plain (*atau gunakan `APP_PASSWORD_HASH`) |
 | `APP_PASSWORD_HASH` | ○ | bcrypt hash (generate: lihat bawah) |
-| `SECRET_KEY` | ✅ | Signing key token — `openssl rand -hex 32` |
-| `WAHA_WEBHOOK_URL` | ○ | Default endpoint WAHA |
+| `SECRET_KEY` | ✅ | Flask secret key — `openssl rand -hex 32` |
 | `DEBUG` | ○ | `false` untuk production |
 
 Generate bcrypt hash:
@@ -153,60 +168,60 @@ python3 -c "import bcrypt; print(bcrypt.hashpw(b'password_anda', bcrypt.gensalt(
 ## 📊 Database Schema
 
 ```
-projects ─┬─< tasks ─┬─< reminders
-          │          └─< notification_logs >─ webhook_configs
-          └─< notification_logs
+users ─< projects ─< tasks ─< reminders
+        └─< notification_logs
 ```
 
 | Table | Fungsi |
 |-------|--------|
+| `users` | username, password_hash (bcrypt), created_at |
 | `projects` | name, color (hex), icon, archived, created_at |
 | `tasks` | title, description, priority (enum), status (enum), deadline, completed_at |
 | `reminders` | type (day_h/relative/absolute), relative_value/unit, absolute_time, sent, sent_at |
-| `webhook_configs` | endpoint_url, headers (JSON), message_template, is_active |
 | `notification_logs` | status (pending/sent/failed), response_code/body, retry_count |
 
-## 🔄 Notification Flow
+## 🔄 Task Flow
 
 ```
 Task dibuat dengan deadline
     ↓ (auto)
-Day-H reminder terbuat
-    ↓ (tiap menit)
-Scheduler cek semua reminder yang belum terkirim
-    ↓ (jika due)
-Render template → POST webhook (WAHA)
-    ↓ (gagal?)
-Retry exponential backoff → log hasil
-    ↓
-notification_logs + reminder.sent = true
+Day-H reminder terbuat (di database)
+    ↓ (user action)
+Task di-mark complete / reopened
+    ↓ (state machine)
+Status berubah + completed_at di-set/unset
 ```
 
-Template variables: `{task_title}`, `{project_name}`, `{deadline}`, `{priority}`, `{status}`
+**Note**: Notification & scheduler akan diimplementasikan di Phase 4 (pending).
 
 ## 🧪 Testing
 
-E2E test suite lengkap (14 checks) — semua lulus:
+Test suite lengkap dengan pytest — semua lulus:
 
 ```bash
-# Pastikan MySQL + server berjalan, lalu:
-bash docs/e2e_final_test.sh   # atau lihat docs/TESTING_DEPLOYMENT.md
+# Jalankan test (pastikan .venv aktif)
+.venv/bin/python -m pytest -v
 ```
 
-Coverage: health, auth (valid/invalid/protected), project CRUD, task CRUD + auto Day-H reminder, completion toggle, stats, scheduler, notification logs, frontend, Swagger UI.
+Coverage (43/43 pass):
+- **Auth** (8 test): login valid/invalid, session, protected routes, seed user
+- **Projects** (11 test): CRUD, archive, count, filter
+- **Tasks** (14 test): CRUD, toggle complete, state machine, Day-H sync, deadline overdue
+- **Stats** (3 test): dashboard count queries, aggregate performance
+- **Integration** (7 test): PRG pattern, flash messages, AJAX JSON responses, anti N+1
 
 ## 🚀 Deployment
 
-Panduan production lengkap: [docs/TESTING_DEPLOYMENT.md](docs/TESTING_DEPLOYMENT.md)
+**Phase 5 (Pending)** — Deployment Docker akan diimplementasikan setelah Phase 4 selesai.
 
-```bash
-# Production checklist singkat:
-export SECRET_KEY="$(openssl rand -hex 32)"
-export APP_PASSWORD_HASH="<bcrypt_hash>"
-export WAHA_WEBHOOK_URL="https://waha-instance-anda.com/webhook"
-docker compose up -d
-docker compose exec dashboardku alembic upgrade head
-```
+**Untuk sekarang**: Gunakan development mode via venv (lihat Quick Start di atas).
+
+**Future checklist**:
+- Dockerfile dengan gunicorn
+- docker-compose.yml (service aplikasi + MySQL)
+- HTTPS (reverse proxy Caddy/nginx)
+- Rate limiting login
+- Hardening security headers
 
 ### Backup & Restore Database
 ```bash
@@ -220,21 +235,20 @@ cat backup.sql | docker compose exec -T mysql mysql -u root -prootpass dashboard
 
 | Phase | Scope | Status |
 |-------|-------|--------|
-| 1. Foundation | Docker, MySQL, models, FastAPI | ✅ Complete |
-| 2. Core CRUD | Auth, Project/Task/Reminder API | ✅ Complete |
-| 3. Notification | Scheduler, webhook, retry, logging | ✅ Complete |
-| 4. Frontend | SPA login + dashboard + modals | ✅ Complete |
-| 5. Testing & Deployment | E2E tests, git, docs | ✅ Complete |
+| 1. Foundation | Flask, MySQL, models, auth | ✅ Complete |
+| 2. Connect Real DB | ORM, aggregate queries, Day-H sync | ✅ Complete |
+| 3. Frontend Polish | Skeleton, AJAX toggle, shortcuts, a11y | ✅ Complete |
+| 4. Notification & Scheduler | Webhook, retry, logging, settings | ⏳ Pending |
+| 5. Deployment Docker | Dockerfile, docker-compose, production | ⏳ Pending |
 
-**Progress: 100% (5/5 phases)** — detail per phase di [PROJECT_TRACKER.md](PROJECT_TRACKER.md)
+**Progress: 60% (3/5 phases)** — detail per phase di [docs/2026-08-27 - Rencana Migrasi Flask.md](docs/2026-08-27%20-%20Rencana%20Migrasi%20Flask.md)
 
 ## 📚 Dokumentasi
 
-- [CONCEPT.md](CONCEPT.md) — Spesifikasi sistem & implementation plan
-- [DESIGN.md](DESIGN.md) — Design system (warna, tipografi, komponen)
-- [PROJECT_TRACKER.md](PROJECT_TRACKER.md) — Tracker status semua phase
-- [docs/TESTING_DEPLOYMENT.md](docs/TESTING_DEPLOYMENT.md) — Testing & production deployment
-- [docs/PHASE_1-5_SUMMARY.md](docs/) — Ringkasan per phase
+- [DESIGN.md](DESIGN.md) — Design system (warna, tipografi, komponen, shortcuts)
+- [AGENTS.md](AGENTS.md) — Coding standards + mapping archetype
+- [docs/2026-08-27 - Rencana Migrasi Flask.md](docs/2026-08-27%20-%20Rencana%20Migrasi%20Flask.md) — Roadmap lengkap 5 phase
+- [docs/coding-standards/](docs/coding-standards/) — Rule files untuk controller, service, model, view, form, dll.
 
 ## 📝 License
 
@@ -242,4 +256,4 @@ MIT
 
 ---
 
-**Version**: 1.0.0 | **Completed**: August 18, 2026 | **Status**: Production Ready ✅
+**Version**: 2.0.0 (Flask) | **Updated**: August 27, 2026 | **Status**: Beta ✅

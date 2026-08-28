@@ -1,0 +1,73 @@
+{# components/card.html — macro kartu project & baris task #}
+{% from "components/badge.html" import deadline_badge, priority_badge, project_tag, status_badge %}
+
+{% macro project_card(project) -%}
+<a href="{{ url_for('project.detail', project_id=project.id) }}"
+   class="group block rounded-lg border border-hairline bg-surface p-5 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-md">
+  <div class="flex items-start justify-between">
+    <span class="flex h-10 w-10 items-center justify-center rounded-lg text-white"
+          style="background-color: {{ project.color }}">
+      <i class="fa-solid fa-{{ project.icon or 'folder' }}" aria-hidden="true"></i>
+    </span>
+    {% if project.archived %}
+    <span class="inline-flex items-center gap-1 rounded-full bg-surface-soft px-2.5 py-1 text-[12px] font-medium text-slate">
+      <i class="fa-solid fa-box-archive text-[11px]" aria-hidden="true"></i>Diarsipkan
+    </span>
+    {% endif %}
+  </div>
+  <h3 class="mt-3 text-[20px] font-medium text-ink-deep">{{ project.name }}</h3>
+  <p class="mt-1 text-[12px] text-steel">{{ project.active_tasks }} aktif dari {{ project.total_tasks }} tugas</p>
+  <div class="mt-3 h-1.5 overflow-hidden rounded-full bg-surface-soft">
+    {%- set percent = (project.done_tasks / project.total_tasks * 100) | round | int if project.total_tasks else 0 -%}
+    <div class="h-full rounded-full" style="width: {{ percent }}%; background-color: {{ project.color }}"></div>
+  </div>
+</a>
+{%- endmacro %}
+
+{% macro task_item(task, next_url=None) -%}
+<div data-task-item data-task-id="{{ task.id }}" data-status="{{ task.status }}"
+     class="flex items-center gap-3 rounded-lg border border-hairline bg-surface p-4 min-h-[56px] transition-shadow duration-150 hover:shadow-sm
+            {% if task.status == 'done' %}is-done{% endif %}
+            {% if task.deadline_state == 'overdue' %}border-l-4 border-l-critical{% endif %}">
+  <form method="post" action="{{ url_for('task.complete', task_id=task.id) }}" class="shrink-0">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    {% if next_url %}<input type="hidden" name="next" value="{{ next_url }}">{% endif %}
+    <button type="submit" data-task-toggle
+            class="text-[22px] leading-none transition-transform active:scale-110"
+            aria-label="{{ 'Buka kembali tugas' if task.status == 'done' else 'Tandai selesai' }}">
+      <i data-task-toggle-icon
+         class="{{ 'fa-solid' if task.status == 'done' else 'fa-regular' }} fa-circle-check" aria-hidden="true"></i>
+    </button>
+  </form>
+
+  <a href="{{ url_for('task.detail', task_id=task.id) }}" class="min-w-0 flex-1">
+    <p data-task-title class="truncate text-[16px] font-medium {% if task.status == 'done' %}text-stone line-through{% else %}text-ink-deep{% endif %}">
+      {{ task.title }}
+    </p>
+    <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+      {{ project_tag(task.project_name, task.project_color) }}
+      {% if task.deadline %}{{ deadline_badge(task.deadline_state, task.deadline_label) }}{% endif %}
+    </div>
+  </a>
+
+  <div class="hidden shrink-0 items-center gap-2 sm:flex">
+    {{ priority_badge(task.priority) }}
+    <span data-task-status-badge>{{ status_badge(task.status) }}</span>
+  </div>
+</div>
+{%- endmacro %}
+
+{% macro empty_state(icon, title, subtitle, cta_url=None, cta_label=None) -%}
+<div class="flex flex-col items-center justify-center rounded-lg border border-dashed border-hairline bg-surface px-6 py-12 text-center">
+  <span class="flex h-12 w-12 items-center justify-center rounded-full bg-surface-soft text-steel">
+    <i class="fa-solid {{ icon }} text-xl" aria-hidden="true"></i>
+  </span>
+  <h3 class="mt-4 text-[16px] font-medium text-ink-deep">{{ title }}</h3>
+  <p class="mt-1 max-w-sm text-[14px] text-slate">{{ subtitle }}</p>
+  {% if cta_url %}
+  <a href="{{ cta_url }}" class="mt-5 inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-[14px] font-medium text-white transition hover:bg-primary-deep">
+    <i class="fa-solid fa-plus text-[12px]" aria-hidden="true"></i>{{ cta_label }}
+  </a>
+  {% endif %}
+</div>
+{%- endmacro %}

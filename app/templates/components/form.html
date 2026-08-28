@@ -1,0 +1,75 @@
+{# components/form.html — macro render field WTForms + tombol #}
+
+{% macro _errors(field) -%}
+  {% for error in field.errors %}
+  <p class="mt-1.5 text-[12px] text-critical">
+    <i class="fa-solid fa-circle-exclamation mr-1" aria-hidden="true"></i>{{ error }}
+  </p>
+  {% endfor %}
+{%- endmacro %}
+
+{% macro _label(field) -%}
+  <span class="mb-1.5 block text-[16px] font-medium text-charcoal">{{ field.label.text }}</span>
+{%- endmacro %}
+
+{% macro _input_cls(field) -%}
+  w-full rounded-lg border bg-surface px-4 py-2.5 text-[14px] text-ink transition
+  placeholder:text-stone focus:border-primary focus:outline-none focus:ring-3 focus:ring-primary/10
+  {{ 'border-critical' if field.errors else 'border-hairline' }}
+{%- endmacro %}
+
+{% macro text_field(field, placeholder="") -%}
+<label class="block">
+  {{ _label(field) }}
+  {{ field(class=_input_cls(field), placeholder=placeholder) }}
+  {{ _errors(field) }}
+</label>
+{%- endmacro %}
+
+{% macro textarea_field(field, placeholder="", rows=4) -%}
+<label class="block">
+  {{ _label(field) }}
+  {{ field(class=_input_cls(field) + ' min-h-[80px] resize-y', placeholder=placeholder, rows=rows) }}
+  {{ _errors(field) }}
+</label>
+{%- endmacro %}
+
+{% macro select_field(field) -%}
+<label class="block">
+  {{ _label(field) }}
+  <div class="relative">
+    {{ field(class=_input_cls(field) + ' appearance-none pr-10') }}
+    <span class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-steel">
+      <i class="fa-solid fa-chevron-down text-[12px]" aria-hidden="true"></i>
+    </span>
+  </div>
+  {{ _errors(field) }}
+</label>
+{%- endmacro %}
+
+{% macro datetime_field(field) -%}
+<label class="block">
+  {{ _label(field) }}
+  <div class="relative">
+    {{ field(class=_input_cls(field) + ' pr-10') }}
+    <span class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-steel">
+      <i class="fa-regular fa-calendar text-[14px]" aria-hidden="true"></i>
+    </span>
+  </div>
+  {{ _errors(field) }}
+</label>
+{%- endmacro %}
+
+{% macro submit_button(label, icon="fa-check") -%}
+<button type="submit" data-submit-button
+        class="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-[14px] font-medium text-white transition hover:bg-primary-deep active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60">
+  <i class="fa-solid {{ icon }} text-[13px]" aria-hidden="true"></i>{{ label }}
+</button>
+{%- endmacro %}
+
+{% macro cancel_link(href, label="Batal") -%}
+<a href="{{ href }}"
+   class="inline-flex items-center gap-2 rounded-full border border-primary px-4 py-2 text-[14px] font-medium text-primary transition hover:bg-primary-soft">
+  {{ label }}
+</a>
+{%- endmacro %}

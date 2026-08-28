@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% from "components/card.html" import empty_state, task_item %}
+{% from "components/modal.html" import confirm_modal %}
+{% from "components/page_path.html" import page_path %}
+
+{% block title %}{{ project.name }} · dash.xsadev{% endblock %}
+
+{% block page_title %}{{ project.name }}{% endblock %}
+
+{% block authenticated_content %}
+{{ page_path([
+     {"label": "Project", "href": url_for("project.index")},
+     {"label": project.name},
+   ]) }}
+
+<div class="flex flex-col gap-6">
+  <!-- Project Header -->
+  <div class="flex flex-wrap items-start justify-between gap-4">
+    <div class="flex items-center gap-4">
+      <span class="flex h-14 w-14 items-center justify-center rounded-lg text-white" style="background-color: {{ project.color }}">
+        <i class="fa-solid fa-{{ project.icon or 'folder' }} text-xl" aria-hidden="true"></i>
+      </span>
+      <div>
+        <h1 class="text-[28px] font-bold leading-tight text-ink-deep md:text-[32px]">{{ project.name }}</h1>
+        <p class="mt-1 text-[12px] text-steel">Dibuat {{ project.created_at | fmt_date }}</p>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <a href="{{ url_for('project.edit', project_id=project.id) }}"
+       class="inline-flex items-center gap-2 rounded-full border border-primary px-4 py-2 text-[14px] font-medium text-primary transition hover:bg-primary-soft">
+      <i class="fa-solid fa-pen text-[12px]" aria-hidden="true"></i>Edit
+    </a>
+    {% if project.archived %}
+    <form method="post" action="{{ url_for('project.archive', project_id=project.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="archived" value="false">
+      <button type="submit" class="inline-flex items-center gap-2 rounded-full px-3 py-2 text-[12px] font-medium text-charcoal transition hover:bg-surface-soft hover:text-success">
+        <i class="fa-solid fa-rotate-left text-[12px]" aria-hidden="true"></i>Pulihkan
+      </button>
+    </form>
+    {% else %}
+    <form method="post" action="{{ url_for('project.archive', project_id=project.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="archived" value="true">
+      <button type="submit" class="inline-flex items-center gap-2 rounded-full px-3 py-2 text-[12px] font-medium text-charcoal transition hover:bg-surface-soft hover:text-warning">
+        <i class="fa-solid fa-box-archive text-[12px]" aria-hidden="true"></i>Arsipkan
+      </button>
+    </form>
+    {% endif %}
+    <button type="button" data-modal-target="modal-delete-project" aria-haspopup="dialog"
+            class="inline-flex items-center gap-2 rounded-full px-3 py-2 text-[12px] font-medium text-charcoal transition hover:bg-surface-soft hover:text-critical">
+      <i class="fa-solid fa-trash text-[12px]" aria-hidden="true"></i>Hapus
+    </button>
+  </div>
+</div>
+
+{# ── Stats project ── #}
+<section class="mt-6 grid grid-cols-3 gap-4" aria-label="Statistik project">
+  {% set stats = [
+    {"label": "Total", "value": project.total_tasks, "icon": "fa-list-check", "cls": "bg-primary-soft text-primary"},
+    {"label": "Aktif", "value": project.active_tasks, "icon": "fa-play", "cls": "bg-info/10 text-info"},
+    {"label": "Selesai", "value": project.done_tasks, "icon": "fa-circle-check", "cls": "bg-success/10 text-success"},
+  ] %}
+  {% for stat in stats %}
+  <div class="flex items-center gap-3 rounded-lg border border-hairline bg-surface p-4">
+    <span class="flex h-9 w-9 items-center justify-center rounded-lg {{ stat.cls }}">
+      <i class="fa-solid {{ stat.icon }} text-[13px]" aria-hidden="true"></i>
+    </span>
+    <div>
+      <p class="text-[20px] font-bold leading-none text-ink-deep">{{ stat.value }}</p>
+      <p class="mt-0.5 text-[12px] text-slate">{{ stat.label }}</p>
+    </div>
+  </div>
+  {% endfor %}
+</section>
+
+{# ── Task list ── #}
+<section class="mt-10" aria-label="Tugas project">
+  <div class="flex items-center justify-between border-b border-hairline-soft pb-4">
+    <h2 class="text-[24px] font-bold text-ink-deep">Tugas</h2>
+    <a href="{{ url_for('task.create', project_id=project.id) }}"
+       class="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-[14px] font-medium text-white transition hover:bg-primary-deep">
+      <i class="fa-solid fa-plus text-[12px]" aria-hidden="true"></i>Tambah Tugas
+    </a>
+  </div>
+  {% if tasks %}
+  <div class="mt-5 space-y-4">
+    {% for task in tasks %}{{ task_item(task, next_url=url_for('project.detail', project_id=project.id)) }}{% endfor %}
+  </div>
+  {% else %}
+  <div class="mt-5">
+    {{ empty_state("fa-list-check", "Belum ada tugas", "Project ini belum memiliki tugas.", url_for('task.create', project_id=project.id), "Tambah Tugas") }}
+  </div>
+  {% endif %}
+</section>
+
+{{ confirm_modal(
+  "modal-delete-project",
+  "Hapus project?",
+  "Project '" ~ project.name ~ "' akan dihapus. Tugas di dalamnya akan menjadi tanpa project.",
+  url_for("project.delete", project_id=project.id),
+  "Hapus Project",
+) }}
+{% endblock %}

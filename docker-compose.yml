@@ -1,28 +1,9 @@
+# Docker hanya untuk MySQL di fase development (keputusan rencana migrasi #14).
+# Service aplikasi Flask ditambahkan kembali di fase deployment.
 services:
-  dashboardku:
-    build: .
-    ports:
-      - "8000:8000"
-    environment:
-      - DB_HOST=mysql
-      - DB_PORT=3306
-      - DB_NAME=dashboardku
-      - DB_USER=dashboardku
-      - DB_PASS=secret
-      - APP_USERNAME=admin
-      - APP_PASSWORD=changeme
-      - SECRET_KEY=dev-secret-change-me
-      - WAHA_WEBHOOK_URL=https://your-waha-endpoint.com/webhook
-    depends_on:
-      mysql:
-        condition: service_healthy
-    volumes:
-      - ./app:/app/app
-      - ./alembic:/app/alembic
-      - ./alembic.ini:/app/alembic.ini
-
   mysql:
     image: mysql:8.0
+    container_name: dashboardku-mysql
     environment:
       - MYSQL_ROOT_PASSWORD=rootpass
       - MYSQL_DATABASE=dashboardku

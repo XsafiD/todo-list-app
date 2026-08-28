@@ -47,6 +47,8 @@ Inter UI (via Google Fonts) anchors the entire system, ranging from a 32px secti
 - **Steel** ({colors.steel}): Quieter timestamp text and metadata.
 - **Stone** ({colors.stone}): Disabled or de-emphasized labels.
 
+> **Tuning WCAG AA (2026-08-27, audit Phase 3):** nilai `steel`/`stone` diredamkan agar teks 12–14px lolos kontras 4.5:1 di atas `surface`, `surface-soft`, dan `canvas`. Teks kecil di atas tint badge/flash memakai varian `{colors.*.ink}` (`success-ink`, `warning-ink`, `critical-ink`, `info-ink`) — varian DEFAULT tetap untuk ikon, fill, dan aksen.
+
 ### Semantic
 - **Success** ({colors.success}): Task completed, project archived.
 - **Warning** ({colors.warning}): Deadline within 24 hours.
@@ -267,6 +269,25 @@ The system runs predominantly flat. Elevation is reserved for two interaction la
 - Columns: Time, Task, Status, Response.
 - Status badges: Sent (green), Failed (red), Pending (gray).
 
+### Feedback
+
+**`toast`** — Notifikasi singkat untuk aksi cepat tanpa reload (mis. toggle complete via AJAX).
+- Posisi: fixed kanan-bawah; di mobile ditumpuk di atas bottom nav (`bottom-20`), di desktop `bottom-6`.
+- Max lebar `288px` (max-w-xs), stack vertikal gap `{spacing.xs}`.
+- Styling sama dengan flash alert: border + tint background + varian `*-ink` untuk teks, ikon Font Awesome per tipe (success/error/info).
+- Container `role="status"` + `aria-live="polite"` agar screen reader mengumumkan.
+- Auto-dismiss 4 detik + tombol tutup; animasi masuk `toast-in` 150ms ease-out.
+
+### Keyboard Shortcuts
+
+Shortcut global (aktif saat login, diabaikan saat fokus di input/textarea/select atau dengan modifier Ctrl/Meta/Alt):
+
+| Key | Aksi |
+|---|---|
+| `n` | Buat tugas baru (navigasi ke form create) |
+| `/` | Fokus ke filter pertama di halaman Tugas |
+| `Escape` | Tutup modal (sudah berlaku sejak Phase 1) |
+
 ## Do's and Don'ts
 
 ### Do
@@ -332,6 +353,7 @@ The system runs predominantly flat. Elevation is reserved for two interaction la
 - Tab order follows visual flow.
 - Focus visible on all interactive elements.
 - Escape closes modals/dropdowns.
+- Modal: fokus pindah ke dalam panel saat dibuka, ter-trap di dalamnya (siklus Tab), dan kembali ke elemen pemicu saat ditutup.
 
 ### Screen Reader
 - Task items use `<button>` for checkboxes.
@@ -348,10 +370,10 @@ The system runs predominantly flat. Elevation is reserved for two interaction la
 
 ## Known Gaps
 
-- Dark mode tokens not yet defined.
-- Calendar view component not specified.
+- Dark mode tokens not yet defined — **diputuskan ditunda (2026-08-27, Phase 3)**; didefinisikan saat ada kebutuhan nyata.
+- Calendar view component not specified — **diputuskan ditunda (2026-08-27, Phase 3)**; list + filter deadline dinilai cukup untuk sekarang.
 - Drag-and-drop for task reordering not defined.
-- Keyboard shortcuts not specified.
+- Keyboard shortcuts: **sudah dispesifikasikan** (lihat §Components → Keyboard Shortcuts) — implementasi di `static/js/shortcuts.js`.
 
 ---
 

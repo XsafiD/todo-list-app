@@ -1,0 +1,24 @@
+{# components/bottom_nav.html — navigasi bawah (mobile only) #}
+{% set nav = request.endpoint or '' %}
+<nav class="fixed inset-x-0 bottom-0 z-40 border-t border-hairline bg-surface md:hidden" aria-label="Navigasi utama">
+  <div class="grid grid-cols-3">
+    <a href="{{ url_for('main.dashboard') }}"
+       class="flex flex-col items-center gap-1 py-2.5 text-[12px] font-medium
+              {% if nav.startswith('main.') %}text-primary-deep{% else %}text-slate{% endif %}">
+      <i class="fa-solid fa-table-columns text-[18px]" aria-hidden="true"></i>
+      Dashboard
+    </a>
+    <a href="{{ url_for('project.index') }}"
+       class="flex flex-col items-center gap-1 py-2.5 text-[12px] font-medium
+              {% if nav.startswith('project.') %}text-primary-deep{% else %}text-slate{% endif %}">
+      <i class="fa-solid fa-folder-open text-[18px]" aria-hidden="true"></i>
+      Project
+    </a>
+    <a href="{{ url_for('task.index') }}"
+       class="flex flex-col items-center gap-1 py-2.5 text-[12px] font-medium
+              {% if nav.startswith('task.') %}text-primary-deep{% else %}text-slate{% endif %}">
+      <i class="fa-solid fa-list-check text-[18px]" aria-hidden="true"></i>
+      Tugas
+    </a>
+  </div>
+</nav>

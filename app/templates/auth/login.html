@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% from "components/form.html" import text_field, submit_button %}
+
+{% block title %}Masuk · dash.xsadev{% endblock %}
+
+{% block public_content %}
+<div class="flex min-h-[70vh] items-center justify-center">
+  <div class="w-full max-w-sm">
+    <div class="mb-8 text-center">
+      <span class="mx-auto flex h-14 w-14 items-center justify-center rounded-xl bg-primary text-white shadow-lg">
+        <i class="fa-solid fa-table-columns text-2xl" aria-hidden="true"></i>
+      </span>
+      <h1 class="mt-4 text-[32px] text-ink-deep"><span class="font-bold">dash</span><span class="font-normal text-primary-deep">.xsadev</span></h1>
+      <p class="mt-1 text-[14px] text-slate">Masuk untuk melanjutkan</p>
+    </div>
+
+    <form method="post" class="rounded-lg border border-hairline bg-surface p-6 shadow-sm">
+      {{ form.hidden_tag() }}
+      <div class="space-y-4">
+        {{ text_field(form.username, placeholder="Username") }}
+        {{ text_field(form.password, placeholder="Password") }}
+      </div>
+      <div class="mt-6">
+        {{ submit_button("Masuk", icon="fa-right-to-bracket") }}
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

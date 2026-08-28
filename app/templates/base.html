@@ -1,0 +1,187 @@
+{# base.html — layout induk (semua page inherit dari sini) #}
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}dash.xsadev{% endblock %}</title>
+  <meta name="description" content="dash.xsadev — personal task management: kelola project, tugas, dan deadline dalam satu dashboard.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232563EB'/%3E%3Cpath d='M9 17.5l4.5 4.5L23 12.5' stroke='white' stroke-width='3.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+          },
+          colors: {
+            primary: { DEFAULT: '#2563EB', deep: '#1D4ED8', soft: 'rgba(37, 99, 235, 0.10)' },
+            success: { DEFAULT: '#16A34A', ink: '#15803D' },
+            warning: { DEFAULT: '#F59E0B', ink: '#92400E' },
+            critical: { DEFAULT: '#DC2626', ink: '#B91C1C' },
+            info: { DEFAULT: '#0EA5E9', ink: '#0369A1' },
+            canvas: '#F3F4F6',
+            surface: { DEFAULT: '#FFFFFF', soft: '#F9FAFB' },
+            hairline: { DEFAULT: '#E5E7EB', soft: '#F3F4F6' },
+            ink: { DEFAULT: '#1F2937', deep: '#111827' },
+            charcoal: '#374151',
+            slate: '#6B7280',
+            steel: '#696F80',
+            stone: '#646B7C',
+          },
+        },
+      },
+    };
+  </script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="bg-canvas font-sans text-ink antialiased"{% if session.get('user_id') %} data-url-task-create="{{ url_for('task.create') }}"{% endif %}>
+  {% if session.get('user_id') %}
+    <!-- Sidebar Navigation (Desktop Only) -->
+    <aside class="hidden md:flex fixed left-0 top-0 z-50 h-screen w-60 flex-col border-r border-hairline bg-surface">
+      <div class="flex h-16 items-center border-b border-hairline px-4">
+        <a href="{{ url_for('main.dashboard') }}" class="flex items-center gap-2.5">
+          <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-white">
+            <i class="fa-solid fa-table-columns" aria-hidden="true"></i>
+          </span>
+          <span class="text-[20px] text-ink-deep"><span class="font-bold">dash</span><span class="font-normal text-primary-deep">.xsadev</span></span>
+        </a>
+      </div>
+
+      <nav class="flex-1 overflow-y-auto py-4" aria-label="Navigasi utama">
+        <div class="space-y-1 px-3">
+          <!-- Dashboard -->
+          <a href="{{ url_for('main.dashboard') }}"
+             class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-[14px] font-medium transition
+                    {% if request.endpoint and request.endpoint.startswith('main.') %}bg-primary-soft text-primary-deep{% else %}text-charcoal hover:bg-surface-soft{% endif %}">
+            <i class="fa-solid fa-table-columns text-[18px] w-6 text-center" aria-hidden="true"></i>
+            <span class="whitespace-nowrap">Dashboard</span>
+          </a>
+
+          <!-- Project -->
+          <a href="{{ url_for('project.index') }}"
+             class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-[14px] font-medium transition
+                    {% if request.endpoint and request.endpoint.startswith('project.') and request.endpoint != 'project.create' %}bg-primary-soft text-primary-deep{% else %}text-charcoal hover:bg-surface-soft{% endif %}">
+            <i class="fa-solid fa-folder-open text-[18px] w-6 text-center" aria-hidden="true"></i>
+            <span class="whitespace-nowrap">Project</span>
+          </a>
+
+          <!-- Task -->
+          <a href="{{ url_for('task.index') }}"
+             class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-[14px] font-medium transition
+                    {% if request.endpoint and request.endpoint.startswith('task.') and request.endpoint != 'task.create' %}bg-primary-soft text-primary-deep{% else %}text-charcoal hover:bg-surface-soft{% endif %}">
+            <i class="fa-solid fa-list-check text-[18px] w-6 text-center" aria-hidden="true"></i>
+            <span class="whitespace-nowrap">Tugas</span>
+          </a>
+        </div>
+      </nav>
+
+      <div class="border-t border-hairline p-4">
+        <div class="flex items-center gap-3">
+          <div class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <i class="fa-solid fa-circle-user text-[18px]" aria-hidden="true"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="truncate text-[14px] font-medium text-ink">{{ session.get('username', '') }}</p>
+          </div>
+          <form method="post" action="{{ url_for('auth.logout') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit"
+                    class="rounded-lg p-2 text-slate transition hover:bg-surface-soft hover:text-critical"
+                    aria-label="Keluar">
+              <i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i>
+            </button>
+          </form>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="md:ml-60 min-h-screen flex flex-col">
+      <!-- Top Bar — hanya nama halaman (path navigasi ada di dalam konten) -->
+      <header class="sticky top-0 z-40 border-b border-hairline bg-surface/95 backdrop-blur supports-[backdrop-filter]:bg-surface/60">
+        <div class="mx-auto flex h-16 max-w-7xl items-center px-4 md:px-6">
+          <h1 class="truncate text-[20px] font-bold text-ink-deep md:text-[24px]">{% block page_title %}{% endblock %}</h1>
+        </div>
+      </header>
+
+      <!-- Main Content -->
+      <main class="mx-auto w-full max-w-7xl flex-1 px-4 py-6 md:px-6 md:py-8 pb-24 md:pb-8">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="mb-6 space-y-2">
+              {% for category, message in messages %}
+                <div data-alert
+                     class="flex items-center gap-3 rounded-lg border px-4 py-3 text-[14px]
+                            {% if category == 'error' %}border-critical/20 bg-critical/10 text-critical-ink
+                            {% elif category == 'success' %}border-success/20 bg-success/10 text-success-ink
+                            {% else %}border-info/20 bg-info/10 text-info-ink{% endif %}">
+                  <i class="fa-solid
+                            {% if category == 'error' %}fa-circle-exclamation
+                            {% elif category == 'success' %}fa-circle-check
+                            {% else %}fa-circle-info{% endif %}" aria-hidden="true"></i>
+                  <p class="flex-1">{{ message }}</p>
+                  <button type="button" data-alert-close class="opacity-50 transition hover:opacity-100" aria-label="Tutup">
+                    <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                  </button>
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+      {% block authenticated_content %}{% endblock %}
+    </main>
+    </div>
+
+    <!-- Bottom Navigation (Mobile Only) -->
+    <div class="md:hidden">
+      {% include 'components/bottom_nav.html' %}
+    </div>
+  {% else %}
+    <!-- Public pages (no login) -->
+    <main class="min-h-screen flex items-center justify-center px-4">
+      <div class="w-full max-w-md">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="mb-6 space-y-2">
+              {% for category, message in messages %}
+                <div data-alert
+                     class="flex items-center gap-3 rounded-lg border px-4 py-3 text-[14px]
+                            {% if category == 'error' %}border-critical/20 bg-critical/10 text-critical-ink
+                            {% elif category == 'success' %}border-success/20 bg-success/10 text-success-ink
+                            {% else %}border-info/20 bg-info/10 text-info-ink{% endif %}">
+                  <i class="fa-solid
+                            {% if category == 'error' %}fa-circle-exclamation
+                            {% elif category == 'success' %}fa-circle-check
+                            {% else %}fa-circle-info{% endif %}" aria-hidden="true"></i>
+                  <p class="flex-1">{{ message }}</p>
+                  <button type="button" data-alert-close class="opacity-50 transition hover:opacity-100" aria-label="Tutup">
+                    <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                  </button>
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        {% block public_content %}{% endblock %}
+      </div>
+    </main>
+  {% endif %}
+
+  <script src="{{ url_for('static', filename='js/modal.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/form.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/toast.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/task.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/shortcuts.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

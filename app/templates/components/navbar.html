@@ -1,0 +1,45 @@
+{# components/navbar.html — top-nav sticky (desktop & tablet) #}
+{% set nav = request.endpoint or '' %}
+<nav class="sticky top-0 z-40 border-b border-hairline bg-surface">
+  <div class="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 md:px-6">
+    <a href="{{ url_for('main.dashboard') }}" class="flex items-center gap-2.5">
+      <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-white">
+        <i class="fa-solid fa-table-columns" aria-hidden="true"></i>
+      </span>
+      <span class="text-[20px] text-ink-deep"><span class="font-bold">dash</span><span class="font-normal text-primary-deep">.xsadev</span></span>
+    </a>
+
+    <div class="hidden items-center gap-1 md:flex">
+      <a href="{{ url_for('main.dashboard') }}"
+         class="rounded-lg px-3 py-2 text-[14px] font-medium transition
+                {% if nav.startswith('main.') %}bg-primary-soft text-primary-deep{% else %}text-charcoal hover:bg-surface-soft{% endif %}">
+        <i class="fa-solid fa-table-columns mr-1.5 text-[13px]" aria-hidden="true"></i>Dashboard
+      </a>
+      <a href="{{ url_for('project.index') }}"
+         class="rounded-lg px-3 py-2 text-[14px] font-medium transition
+                {% if nav.startswith('project.') %}bg-primary-soft text-primary-deep{% else %}text-charcoal hover:bg-surface-soft{% endif %}">
+        <i class="fa-solid fa-folder-open mr-1.5 text-[13px]" aria-hidden="true"></i>Project
+      </a>
+      <a href="{{ url_for('task.index') }}"
+         class="rounded-lg px-3 py-2 text-[14px] font-medium transition
+                {% if nav.startswith('task.') %}bg-primary-soft text-primary-deep{% else %}text-charcoal hover:bg-surface-soft{% endif %}">
+        <i class="fa-solid fa-list-check mr-1.5 text-[13px]" aria-hidden="true"></i>Tugas
+      </a>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <span class="hidden items-center gap-2 text-[14px] text-charcoal sm:flex">
+        <i class="fa-solid fa-circle-user text-[18px] text-steel" aria-hidden="true"></i>
+        {{ session.get('username', '') }}
+      </span>
+      <form method="post" action="{{ url_for('auth.logout') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit"
+                class="rounded-lg p-2 text-slate transition hover:bg-surface-soft hover:text-critical"
+                aria-label="Keluar">
+          <i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i>
+        </button>
+      </form>
+    </div>
+  </div>
+</nav>

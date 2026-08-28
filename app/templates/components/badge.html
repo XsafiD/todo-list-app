@@ -1,0 +1,48 @@
+{# components/badge.html — macro badge status/prioritas/deadline #}
+
+{% macro status_badge(status) -%}
+  {%- set map = {
+    "todo":         {"cls": "border border-hairline bg-surface-soft text-slate", "icon": "fa-regular fa-circle", "label": "Todo"},
+    "in_progress":  {"cls": "bg-info/10 text-info-ink", "icon": "fa-solid fa-spinner", "label": "Sedang Dikerjakan"},
+    "done":         {"cls": "bg-success/10 text-success-ink", "icon": "fa-solid fa-circle-check", "label": "Selesai"},
+  } -%}
+  {%- set m = map.get(status, map["todo"]) -%}
+  <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[12px] font-medium {{ m.cls }}">
+    <i class="{{ m.icon }} text-[11px]" aria-hidden="true"></i>{{ m.label }}
+  </span>
+{%- endmacro %}
+
+{% macro priority_badge(priority) -%}
+  {%- set map = {
+    "low":    {"cls": "bg-surface-soft text-slate border border-hairline", "icon": "fa-solid fa-arrow-down-long", "label": "Rendah"},
+    "medium": {"cls": "bg-warning/15 text-ink", "icon": "fa-solid fa-equals", "label": "Sedang"},
+    "high":   {"cls": "bg-critical text-white", "icon": "fa-solid fa-arrow-up-long", "label": "Tinggi"},
+  } -%}
+  {%- set m = map.get(priority, map["medium"]) -%}
+  <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[12px] font-medium {{ m.cls }}">
+    <i class="{{ m.icon }} text-[11px]" aria-hidden="true"></i>{{ m.label }}
+  </span>
+{%- endmacro %}
+
+{% macro deadline_badge(state, label) -%}
+  {%- set map = {
+    "upcoming": {"cls": "bg-info/10 text-info-ink", "icon": "fa-regular fa-clock"},
+    "today":    {"cls": "bg-warning/15 text-warning-ink", "icon": "fa-solid fa-calendar-day"},
+    "overdue":  {"cls": "bg-critical text-white", "icon": "fa-solid fa-triangle-exclamation"},
+  } -%}
+  {%- set m = map.get(state) -%}
+  {%- if m -%}
+  <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[12px] font-medium {{ m.cls }}">
+    <i class="{{ m.icon }} text-[11px]" aria-hidden="true"></i>{{ label }}
+  </span>
+  {%- endif -%}
+{%- endmacro %}
+
+{% macro project_tag(name, color) -%}
+  {%- if name -%}
+  <span class="inline-flex items-center gap-1.5 text-[12px] font-medium text-charcoal">
+    <span class="h-2 w-2 rounded-full" style="background-color: {{ color or '#3B82F6' }}"></span>
+    {{ name }}
+  </span>
+  {%- endif -%}
+{%- endmacro %}

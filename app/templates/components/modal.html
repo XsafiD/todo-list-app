@@ -1,0 +1,33 @@
+{# components/modal.html — macro modal konfirmasi (wired via modal.js) #}
+
+{% macro confirm_modal(modal_id, title, message, action_url, button_label="Hapus", icon="fa-trash") -%}
+<div id="{{ modal_id }}" data-modal class="fixed inset-0 z-50 hidden items-center justify-center p-0 md:p-4" role="dialog" aria-modal="true" aria-labelledby="{{ modal_id }}-title">
+  <div data-modal-overlay class="absolute inset-0 bg-ink-deep/40"></div>
+  <div class="relative flex h-dvh w-full flex-col rounded-none bg-surface p-6 shadow-xl md:h-auto md:max-w-md md:rounded-xl">
+    <div class="flex flex-1 items-center">
+      <div class="flex items-start gap-4">
+        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-critical/10 text-critical">
+          <i class="fa-solid {{ icon }}" aria-hidden="true"></i>
+        </span>
+        <div class="min-w-0">
+          <h3 id="{{ modal_id }}-title" class="text-[16px] font-medium text-ink-deep">{{ title }}</h3>
+          <p class="mt-1 text-[14px] text-slate">{{ message }}</p>
+        </div>
+      </div>
+    </div>
+    <div class="mt-6 flex justify-end gap-3">
+      <button type="button" data-modal-close
+              class="rounded-full border border-primary px-4 py-2 text-[14px] font-medium text-primary transition hover:bg-primary-soft">
+        Batal
+      </button>
+      <form method="post" action="{{ action_url }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit"
+                class="rounded-full bg-critical px-4 py-2 text-[14px] font-medium text-white transition hover:opacity-90 active:scale-[0.98]">
+          {{ button_label }}
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+{%- endmacro %}

@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% from "components/card.html" import empty_state, task_item %}
+{% from "components/page_path.html" import page_path %}
+
+{% block title %}Tugas · dash.xsadev{% endblock %}
+
+{% block page_title %}Tugas{% endblock %}
+
+{% block authenticated_content %}
+{{ page_path([{"label": "Tugas"}]) }}
+
+<div class="flex flex-wrap items-center justify-between gap-3">
+  <p class="text-[14px] text-charcoal">Semua tugas dalam satu tampilan.</p>
+  <a href="{{ url_for('task.create') }}"
+     class="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-[14px] font-medium text-white transition hover:bg-primary-deep">
+    <i class="fa-solid fa-plus text-[12px]" aria-hidden="true"></i>Tugas Baru
+  </a>
+</div>
+{# ── Filter bar ── #}
+<form method="get" data-skeleton class="mt-6 flex flex-wrap items-center gap-3" aria-label="Filter tugas">
+  <div class="relative">
+    <select name="project_id" data-autosubmit aria-label="Filter project"
+            class="appearance-none rounded-full border border-hairline bg-surface py-2 pl-4 pr-9 text-[14px] text-charcoal focus:border-primary focus:outline-none focus:ring-3 focus:ring-primary/10">
+      <option value="">Semua Project</option>
+      {% for project in projects_all %}
+      <option value="{{ project.id }}" {% if filters.get('project_id') == project.id %}selected{% endif %}>{{ project.name }}</option>
+      {% endfor %}
+    </select>
+    <span class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-steel">
+      <i class="fa-solid fa-chevron-down text-[12px]" aria-hidden="true"></i>
+    </span>
+  </div>
+
+  <div class="relative">
+    <select name="status" data-autosubmit aria-label="Filter status"
+            class="appearance-none rounded-full border border-hairline bg-surface py-2 pl-4 pr-9 text-[14px] text-charcoal focus:border-primary focus:outline-none focus:ring-3 focus:ring-primary/10">
+      <option value="">Semua Status</option>
+      {% for value, label in status_choices %}
+      <option value="{{ value }}" {% if filters.get('status') == value %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <span class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-steel">
+      <i class="fa-solid fa-chevron-down text-[12px]" aria-hidden="true"></i>
+    </span>
+  </div>
+
+  <div class="relative">
+    <select name="priority" data-autosubmit aria-label="Filter prioritas"
+            class="appearance-none rounded-full border border-hairline bg-surface py-2 pl-4 pr-9 text-[14px] text-charcoal focus:border-primary focus:outline-none focus:ring-3 focus:ring-primary/10">
+      <option value="">Semua Prioritas</option>
+      {% for value, label in priority_choices %}
+      <option value="{{ value }}" {% if filters.get('priority') == value %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <span class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-steel">
+      <i class="fa-solid fa-chevron-down text-[12px]" aria-hidden="true"></i>
+    </span>
+  </div>
+
+  {% if filters %}
+  <a href="{{ url_for('task.index') }}" class="text-[14px] font-medium text-charcoal transition hover:text-critical">
+    <i class="fa-solid fa-xmark mr-1" aria-hidden="true"></i>Reset
+  </a>
+  {% endif %}
+</form>
+
+{# ── Task list ── #}
+{% if tasks %}
+<section class="mt-6 space-y-4" aria-label="Daftar tugas" data-skeleton-container>
+  {% for task in tasks %}{{ task_item(task, next_url=url_for('task.index')) }}{% endfor %}
+</section>
+{% else %}
+<section class="mt-6" data-skeleton-container>
+  {{ empty_state("fa-list-check", "Tidak ada tugas", "Tidak ada tugas yang cocok dengan filter, atau belum ada tugas sama sekali.", url_for("task.create"), "Tugas Baru") }}
+</section>
+{% endif %}
+
+{# ── Skeleton row — dikloning form.js saat filter dikirim ── #}
+<template data-skeleton-template>
+  <div class="flex items-center gap-3 rounded-lg border border-hairline bg-surface p-4 min-h-[56px]" aria-hidden="true">
+    <span class="skeleton h-6 w-6 shrink-0 rounded-full"></span>
+    <div class="min-w-0 flex-1 space-y-2">
+      <span class="skeleton block h-4 w-2/5"></span>
+      <span class="skeleton block h-3 w-1/4"></span>
+    </div>
+    <span class="skeleton hidden h-5 w-24 shrink-0 rounded-full sm:block"></span>
+  </div>
+</template>
+{% endblock %}

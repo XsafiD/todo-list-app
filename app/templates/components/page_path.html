@@ -1,0 +1,21 @@
+{# components/page_path.html — path navigasi di dalam konten halaman (bukan di top bar) #}
+{% macro page_path(items) -%}
+<nav aria-label="Path halaman" class="mb-6">
+  <ol class="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-slate">
+    {%- for item in items -%}
+      {%- if not loop.first -%}
+    <li aria-hidden="true"><i class="fa-solid fa-chevron-right text-[9px]"></i></li>
+      {%- endif -%}
+    <li class="min-w-0">
+      {%- if loop.last -%}
+      <span class="block max-w-[220px] truncate font-medium text-ink" title="{{ item.label }}">{{ item.label }}</span>
+      {%- elif item.href -%}
+      <a href="{{ item.href }}" class="block max-w-[160px] truncate transition hover:text-primary" title="{{ item.label }}">{{ item.label }}</a>
+      {%- else -%}
+      <span>{{ item.label }}</span>
+      {%- endif -%}
+    </li>
+    {%- endfor -%}
+  </ol>
+</nav>
+{%- endmacro %}

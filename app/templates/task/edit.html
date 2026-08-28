@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% from "components/form.html" import cancel_link, datetime_field, select_field, submit_button, text_field, textarea_field %}
+{% from "components/page_path.html" import page_path %}
+
+{% block title %}Edit {{ task.title }} · dash.xsadev{% endblock %}
+
+{% block page_title %}Edit {{ task.title }}{% endblock %}
+
+{% block authenticated_content %}
+{{ page_path([
+     {"label": "Tugas", "href": url_for("task.index")},
+     {"label": task.title, "href": url_for("task.detail", task_id=task.id)},
+     {"label": "Edit"},
+   ]) }}
+
+<div class="max-w-xl">
+  <p class="text-[14px] text-slate">Perbarui detail tugas {{ task.title }}.</p>
+
+  <form method="post" class="mt-4 space-y-5 rounded-lg border border-hairline bg-surface p-6">
+    {{ form.hidden_tag() }}
+    {{ text_field(form.title, placeholder="mis. Finalisasi laporan bulanan") }}
+    {{ textarea_field(form.description, placeholder="Detail tugas (opsional)") }}
+    {{ select_field(form.project_id) }}
+    {{ select_field(form.priority) }}
+    {{ select_field(form.status) }}
+    {{ datetime_field(form.deadline) }}
+    <div class="flex items-center gap-3 pt-2">
+      {{ submit_button("Simpan Perubahan", icon="fa-check") }}
+      {{ cancel_link(url_for("task.detail", task_id=task.id)) }}
+    </div>
+  </form>
+</div>
+{% endblock %}

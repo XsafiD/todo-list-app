@@ -1,41 +1,35 @@
-.PHONY: help migrate dev test clean docker-build docker-down
+.PHONY: help dev migrate-up migrate-down migrate-revision seed-user mysql-up mysql-down mysql-ps mysql-shell mysql-logs
 
 help: ## Show all commands
 	@echo "Available commands:"
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-15s %s\n", $$1, $$2}'
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-18s %s\n", $$1, $$2}'
 
-migrate-up: ## Run Alembic migrations up
-	docker compose run --rm dashboardku alembic upgrade head
+dev: ## Run Flask development server (venv, port 5000)
+	.venv/bin/flask run --host 0.0.0.0 --port 5000 --debug
+
+migrate-up: ## Run Alembic migrations up (local venv)
+	.venv/bin/alembic upgrade head
 
 migrate-down: ## Rollback latest migration
-	docker compose run --rm dashboardku alembic downgrade -1
+	.venv/bin/alembic downgrade -1
 
-migrate-revision: ## Create new migration file
-	docker compose run --rm dashboardku alembic revision --autogenerate -m "$(MESSAGE)"
+migrate-revision: ## Create new migration file (MESSAGE="...")
+	.venv/bin/alembic revision --autogenerate -m "$(MESSAGE)"
 
-dev: ## Run development server (localhost)
-	python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+seed-user: ## Create/reset seed user (default dari .env)
+	.venv/bin/flask create-user
 
-test: ## Run tests
-	python -m pytest tests/ -v
+mysql-up: ## Start MySQL container (Docker hanya untuk MySQL di fase ini)
+	docker compose up -d mysql
 
-docker-build: ## Build Docker image locally
-	docker compose build
+mysql-down: ## Stop MySQL container
+	docker compose stop mysql
 
-docker-up: ## Start containers
-	docker compose up
-
-docker-down: ## Stop containers
-	docker compose down
-
-docker-ps: ## Show container status
+mysql-ps: ## Show MySQL container status
 	docker compose ps
-
-log: ## View logs
-	docker compose logs -f
-
-shell: ## Enter application shell
-	docker compose exec dashboardku bash
 
 mysql-shell: ## Enter MySQL shell
 	docker compose exec mysql mysql -u dashboardku -psecret dashboardku
+
+mysql-logs: ## View MySQL logs
+	docker compose logs -f mysql

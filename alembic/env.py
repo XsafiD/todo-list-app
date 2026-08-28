@@ -6,8 +6,8 @@ from sqlalchemy import engine_from_config, pool
 from alembic import context
 
 import app.models  # noqa: F401
-from app.config import settings
-from app.database import Base
+from app.config import Config
+from app.extensions import db
 
 config = context.config
 
@@ -15,9 +15,9 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 # Override database URL
-config.set_main_option("sqlalchemy.url", settings.database_url)
+config.set_main_option("sqlalchemy.url", Config.SQLALCHEMY_DATABASE_URI)
 
-target_metadata = Base.metadata
+target_metadata = db.metadata
 
 
 def run_migrations_offline() -> None:
@@ -44,7 +44,7 @@ def run_migrations_online() -> None:
 
     with connectable.connect() as connection:
         context.configure(
-            connection=connection, 
+            connection=connection,
             target_metadata=target_metadata,
             render_as_batch=True,
         )

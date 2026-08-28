@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ error_code or 500 }} · dash.xsadev</title>
+  <meta name="description" content="dash.xsadev — personal task management: kelola project, tugas, dan deadline dalam satu dashboard.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232563EB'/%3E%3Cpath d='M9 17.5l4.5 4.5L23 12.5' stroke='white' stroke-width='3.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+          },
+          colors: {
+            primary: { DEFAULT: '#2563EB', deep: '#1D4ED8', soft: 'rgba(37, 99, 235, 0.10)' },
+            success: { DEFAULT: '#16A34A', ink: '#15803D' },
+            warning: { DEFAULT: '#F59E0B', ink: '#92400E' },
+            critical: { DEFAULT: '#DC2626', ink: '#B91C1C' },
+            info: { DEFAULT: '#0EA5E9', ink: '#0369A1' },
+            canvas: '#F3F4F6',
+            surface: { DEFAULT: '#FFFFFF', soft: '#F9FAFB' },
+            hairline: { DEFAULT: '#E5E7EB', soft: '#F3F4F6' },
+            ink: { DEFAULT: '#1F2937', deep: '#111827' },
+            charcoal: '#374151',
+            slate: '#6B7280',
+            steel: '#696F80',
+            stone: '#646B7C',
+          },
+        },
+      },
+    };
+  </script>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body class="flex min-h-screen flex-col bg-canvas font-sans text-ink antialiased">
+<div class="flex min-h-[60vh] items-center justify-center px-4">
+  <div class="w-full max-w-xl">
+    {% if error_code == 404 %}
+      <div class="text-center">
+        <div class="mb-8 inline-flex h-20 w-20 items-center justify-center rounded-full bg-info/10 text-info">
+          <i class="fa-solid fa-compass text-4xl" aria-hidden="true"></i>
+        </div>
+        <h1 class="mb-3 text-[32px] font-bold text-ink-deep">Halaman Tidak Ditemukan</h1>
+        <p class="mb-8 max-w-md text-[14px] text-slate">
+          Maaf, halaman yang kamu cari tidak tersedia atau mungkin telah dihapus.
+        </p>
+        <a href="{{ url_for('main.dashboard') if session.get('user_id') else url_for('auth.login') }}"
+           class="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-[14px] font-medium text-white transition hover:bg-primary-deep">
+          <i class="fa-solid fa-house text-[13px]" aria-hidden="true"></i>
+          Kembali ke Beranda
+        </a>
+      </div>
+
+    {% elif error_code == 403 %}
+      <div class="text-center">
+        <div class="mb-8 inline-flex h-20 w-20 items-center justify-center rounded-full bg-warning/10 text-warning">
+          <i class="fa-solid fa-lock text-4xl" aria-hidden="true"></i>
+        </div>
+        <h1 class="mb-3 text-[32px] font-bold text-ink-deep">Akses Ditolak</h1>
+        <p class="mb-8 max-w-md text-[14px] text-slate">
+          Kamu tidak memiliki izin untuk mengakses halaman ini.
+        </p>
+        <a href="{{ url_for('main.dashboard') if session.get('user_id') else url_for('auth.login') }}"
+           class="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-[14px] font-medium text-white transition hover:bg-primary-deep">
+          <i class="fa-solid fa-house text-[13px]" aria-hidden="true"></i>
+          Kembali ke Beranda
+        </a>
+      </div>
+
+    {% elif error_code == 500 %}
+      <div class="rounded-lg bg-surface border border-hairline p-8 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+        <div class="mb-6 text-center">
+          <div class="mb-6 inline-flex h-20 w-20 items-center justify-center rounded-full bg-critical/10 text-critical">
+            <i class="fa-solid fa-triangle-exclamation text-4xl" aria-hidden="true"></i>
+          </div>
+          <h1 class="mb-3 text-[32px] font-bold text-ink-deep">Terjadi Kesalahan Server</h1>
+          <p class="text-[14px] text-slate">
+            Maaf, terjadi kesalahan tak terduga pada sistem kami. Tim teknis telah diberitahu dan sedang bekerja untuk memperbaikinya.
+          </p>
+        </div>
+
+        {% if error_details %}
+        <div class="mb-6 rounded-lg bg-critical/5 border border-critical/20 p-4">
+          <h3 class="mb-2 text-[14px] font-medium text-critical">Detail Error</h3>
+          <p class="text-[12px] text-slate break-words font-mono">{{ error_details }}</p>
+        </div>
+        {% endif %}
+
+        <div class="mb-6 rounded-lg bg-info/5 border border-info/20 p-4">
+          <h3 class="mb-2 text-[14px] font-medium text-info">Butuh Bantuan?</h3>
+          <p class="mb-3 text-[12px] text-slate">
+            Jika masalah ini terus berlanjut, silakan hubungi tim support dengan melampirkan:
+          </p>
+          <ul class="text-[12px] text-slate space-y-1">
+            <li class="flex items-start gap-2">
+              <i class="fa-solid fa-check text-[10px] text-success mt-1" aria-hidden="true"></i>
+              <span>Screenshot halaman ini</span>
+            </li>
+            <li class="flex items-start gap-2">
+              <i class="fa-solid fa-check text-[10px] text-success mt-1" aria-hidden="true"></i>
+              <span>URL yang kamu akses: <code class="bg-surface-soft px-1 rounded">{{ request.url }}</code></span>
+            </li>
+            <li class="flex items-start gap-2">
+              <i class="fa-solid fa-check text-[10px] text-success mt-1" aria-hidden="true"></i>
+              <span>Waktu kejadian: <code class="bg-surface-soft px-1 rounded">{{ 'N/A' }}</code></span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="flex flex-col gap-3 sm:flex-row">
+          <a href="{{ url_for('main.dashboard') if session.get('user_id') else url_for('auth.login') }}"
+             class="flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-[14px] font-medium text-white transition hover:bg-primary-deep">
+            <i class="fa-solid fa-house text-[13px]" aria-hidden="true"></i>
+            Kembali ke Beranda
+          </a>
+          <button onclick="window.location.reload()"
+                  class="flex-1 inline-flex items-center justify-center gap-2 rounded-full border border-hairline bg-surface px-6 py-3 text-[14px] font-medium text-ink transition hover:bg-surface-soft">
+            <i class="fa-solid fa-rotate-right text-[13px]" aria-hidden="true"></i>
+            Refresh Halaman
+          </button>
+        </div>
+
+        {% if config.DEBUG %}
+        <details class="mt-6">
+          <summary class="cursor-pointer text-[12px] font-medium text-slate hover:text-ink">
+            <i class="fa-solid fa-bug mr-1" aria-hidden="true"></i>
+            Debug Information (Development Only)
+          </summary>
+          <div class="mt-3 max-h-64 overflow-auto rounded-lg bg-canvas p-4 text-[11px] font-mono text-slate">
+            <pre>{{ error_traceback or 'No traceback available' }}</pre>
+          </div>
+        </details>
+        {% endif %}
+      </div>
+
+    {% else %}
+      <div class="text-center">
+        <div class="mb-8 inline-flex h-20 w-20 items-center justify-center rounded-full bg-warning/10 text-warning">
+          <i class="fa-solid fa-circle-exclamation text-4xl" aria-hidden="true"></i>
+        </div>
+        <h1 class="mb-3 text-[32px] font-bold text-ink-deep">Terjadi Kesalahan</h1>
+        <p class="mb-8 max-w-md text-[14px] text-slate">
+          {{ message or 'Terjadi kesalahan tak terduga.' }}
+        </p>
+        <a href="{{ url_for('main.dashboard') if session.get('user_id') else url_for('auth.login') }}"
+           class="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-[14px] font-medium text-white transition hover:bg-primary-deep">
+          <i class="fa-solid fa-house text-[13px]" aria-hidden="true"></i>
+          Kembali ke Beranda
+        </a>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<script src="/static/js/modal.js"></script>
+<script src="/static/js/form.js"></script>
+</body>
+</html>
