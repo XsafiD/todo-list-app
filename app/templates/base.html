@@ -98,6 +98,12 @@
       </nav>
 
       <div class="border-t border-hairline p-4">
+        <a href="{{ url_for('setting.index') }}"
+           class="mb-2 flex items-center gap-3 rounded-lg px-3 py-2.5 text-[14px] font-medium transition
+                  {% if request.endpoint and request.endpoint.startswith('setting.') %}bg-primary-soft text-primary-deep{% else %}text-charcoal hover:bg-surface-soft{% endif %}">
+          <i class="fa-solid fa-gear text-[18px] w-6 text-center" aria-hidden="true"></i>
+          <span class="whitespace-nowrap">Pengaturan</span>
+        </a>
         <div class="flex items-center gap-3">
           <div class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
             <i class="fa-solid fa-circle-user text-[18px]" aria-hidden="true"></i>

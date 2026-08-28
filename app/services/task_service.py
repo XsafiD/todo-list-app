@@ -343,6 +343,25 @@ class TaskService:
         db.session.commit()
         return task
 
+    def archive_all_completed(self) -> int:
+        """Arsipkan SEMUA task done yang belum terarsip — dipakai job otomatis.
+
+        Satu transaksi single-commit; dipanggil ulang aman (idempotent).
+
+        Returns:
+            Jumlah task yang diarsipkan.
+        """
+        tasks = db.session.scalars(
+            select(Task).where(
+                Task.status == TaskStatus.DONE,
+                Task.archived_at.is_(None),
+            )
+        ).all()
+        for task in tasks:
+            task.archive()  # state machine — done → terarsip
+        db.session.commit()
+        return len(tasks)
+
     def delete(self, task_id: int) -> Task:
         task = db.session.get(Task, task_id)
         if task is None:

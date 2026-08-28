@@ -203,6 +203,23 @@ class Reminder(db.Model):
     task: Mapped[Task] = relationship(back_populates="reminders")
 
 
+class Setting(db.Model):
+    """Konfigurasi aplikasi key-value — toggle & state sistem otomatis.
+
+    Model konfigurasi tanpa state machine (read-heavy); konversi tipe &
+    upsert dilakukan di SettingService.
+    """
+
+    __tablename__ = "settings"
+    __table_args__ = (Index("idx_settings_name", "name", unique=True),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    name: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
+    value: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime, onupdate=func.now(), nullable=True)
+
+
 class WebhookConfig(db.Model):
     """Konfigurasi endpoint notifikasi (DISABLE fase notifikasi)."""
 

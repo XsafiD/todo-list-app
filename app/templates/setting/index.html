@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% from "components/page_path.html" import page_path %}
+
+{% block title %}Pengaturan · dash.xsadev{% endblock %}
+
+{% block page_title %}Pengaturan{% endblock %}
+
+{% block authenticated_content %}
+{{ page_path([{"label": "Pengaturan"}]) }}
+
+<p class="text-[14px] text-charcoal">Kontrol sistem otomatis dan preferensi aplikasi.</p>
+
+{# ── Arsip otomatis ── #}
+<section class="mt-6" aria-label="Arsip otomatis">
+  <div class="rounded-lg border border-hairline bg-surface">
+    <div class="flex flex-wrap items-center justify-between gap-4 p-5">
+      <div class="flex items-start gap-4 min-w-0">
+        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary">
+          <i class="fa-solid fa-box-archive text-[15px]" aria-hidden="true"></i>
+        </span>
+        <div class="min-w-0">
+          <h2 class="text-[16px] font-medium text-ink-deep">Arsip Otomatis</h2>
+          <p class="mt-0.5 text-[14px] text-slate">
+            Tugas berstatus Selesai diarsipkan otomatis setiap hari pukul 23:59.
+          </p>
+        </div>
+      </div>
+
+      <form method="post" action="{{ url_for('setting.toggle_auto_archive') }}" class="shrink-0">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="enabled" value="{{ 'false' if auto_archive_enabled else 'true' }}">
+        <button type="submit" role="switch" aria-checked="{{ 'true' if auto_archive_enabled else 'false' }}"
+                aria-label="{{ 'Nonaktifkan' if auto_archive_enabled else 'Aktifkan' }} arsip otomatis"
+                class="relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors
+                       {% if auto_archive_enabled %}bg-success{% else %}bg-hairline{% endif %} hover:opacity-90 active:scale-[0.98]">
+          <span class="inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform
+                       {% if auto_archive_enabled %}translate-x-[26px]{% else %}translate-x-1{% endif %}"></span>
+        </button>
+      </form>
+    </div>
+
+    <div class="border-t border-hairline-soft px-5 py-4">
+      <dl class="grid gap-4 sm:grid-cols-2">
+        <div>
+          <dt class="text-[12px] font-medium uppercase tracking-wide text-steel">
+            <i class="fa-solid fa-clock-rotate-left mr-1.5" aria-hidden="true"></i>Pelaksanaan berikutnya
+          </dt>
+          <dd class="mt-1 text-[14px] {{ 'text-charcoal' if auto_archive_next_run else 'text-stone' }}">
+            {% if auto_archive_enabled and auto_archive_next_run %}
+              {{ auto_archive_next_run | fmt_datetime }} (waktu lokal)
+            {% elif auto_archive_enabled %}
+              Menunggu scheduler aktif — restart aplikasi bila tidak berubah.
+            {% else %}
+              Tidak terjadwal — arsip otomatis nonaktif.
+            {% endif %}
+          </dd>
+        </div>
+        <div>
+          <dt class="text-[12px] font-medium uppercase tracking-wide text-steel">
+            <i class="fa-solid fa-circle-check mr-1.5" aria-hidden="true"></i>Pelaksanaan terakhir
+          </dt>
+          <dd class="mt-1 text-[14px] {{ 'text-charcoal' if auto_archive_last_run else 'text-stone' }}">
+            {% if auto_archive_last_run %}
+              {{ auto_archive_last_run | fmt_datetime }} — {{ auto_archive_last_count }} tugas diarsipkan
+            {% else %}
+              Belum pernah berjalan.
+            {% endif %}
+          </dd>
+        </div>
+      </dl>
+    </div>
+  </div>
+</section>
+{% endblock %}

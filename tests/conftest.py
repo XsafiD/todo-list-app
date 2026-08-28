@@ -15,6 +15,7 @@ class TestConfig:
     WTF_CSRF_ENABLED = False
     APP_USERNAME = "admin"
     APP_PASSWORD = "test-password"
+    SCHEDULER_ENABLED = False
 
 
 @pytest.fixture

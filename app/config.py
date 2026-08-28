@@ -41,3 +41,6 @@ class Config:
     # Seed user default (dipakai `flask create-user` bila tanpa argumen)
     APP_USERNAME = os.environ.get("APP_USERNAME", "admin")
     APP_PASSWORD = os.environ.get("APP_PASSWORD", "changeme")
+
+    # Background scheduler (arsip otomatis) — off di test, env-overridable
+    SCHEDULER_ENABLED = _bool(os.environ.get("SCHEDULER_ENABLED"), default="true")

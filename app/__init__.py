@@ -1,4 +1,5 @@
 """Application factory Dashboardku — Flask."""
+import os
 from importlib import import_module
 
 from flask import Blueprint, Flask, render_template
@@ -16,6 +17,7 @@ def create_app(config_class: type[Config] = Config) -> Flask:
     _register_error_handlers(app)
     _register_template_filters(app)
     _register_cli(app)
+    _init_scheduler(app)
 
     return app
 
@@ -33,7 +35,7 @@ def _register_blueprints(app: Flask) -> None:
     Loop + try/except ImportError agar foundation tidak crash saat modul
     belum ada (01-controller.md #6).
     """
-    for module_name in ("main", "auth", "project", "task", "archive"):
+    for module_name in ("main", "auth", "project", "task", "archive", "setting"):
         try:
             module = import_module(f"app.controllers.{module_name}_controller")
         except ImportError:
@@ -99,3 +101,16 @@ def _register_cli(app: Flask) -> None:
     from app.cli import register_cli
 
     register_cli(app)
+
+
+def _init_scheduler(app: Flask) -> None:
+    """Start background scheduler — hanya di proses yang melayani request.
+
+    Werkzeug debug reloader menjalankan parent + child; tanpa guard ini
+    scheduler jalan dobel (job 23:59 tereksekusi dua kali).
+    """
+    if app.config.get("DEBUG") and os.environ.get("WERKZEUG_RUN_MAIN") != "true":
+        return
+    from app.scheduler import init_scheduler
+
+    init_scheduler(app)
