@@ -2,13 +2,15 @@
 
 Personal Task Management System dengan project organization, task tracking, dan dashboard analytics — pengganti Todoist yang bisa dikustomisasi penuh.
 
-![Status](https://img.shields.io/badge/status-beta-yellow) ![Phases](https://img.shields.io/badge/phases-3%2F5%20complete-blue) ![License](https://img.shields.io/badge/license-MIT-lightgrey) ![Flask](https://img.shields.io/badge/flask-3.0.3-green)
+![Status](https://img.shields.io/badge/status-beta-yellow) ![Phases](https://img.shields.io/badge/phases-4%2F5%20complete-blue) ![License](https://img.shields.io/badge/license-MIT-lightgrey) ![Flask](https://img.shields.io/badge/flask-3.0.3-green)
 
 ## ✨ Fitur
 
 - **Task Management** — CRUD task dengan priority, status, deadline, dan auto-completion timestamp
 - **Project Organization** — project berwarna dengan soft-delete (archive)
 - **Dashboard Analytics** — stats cards (total, completed, overdue), project grid, task overview
+- **Tugas Kanban** — board 3 kolom (Todo/Proses/Selesai) drag & drop SortableJS, warna kolom per status, fallback tombol pindah
+- **Arsip** — arsipkan tugas selesai dari Kanban + arsip otomatis harian 23:59 (APScheduler, toggle di Pengaturan)
 - **Smart Filtering** — filter task by project, status, priority dengan autosubmit
 - **Task State Machine** — todo → in_progress → done dengan toggle complete
 - **Day-H Reminder** — reminder otomatis di hari deadline (auto-created)
@@ -25,7 +27,7 @@ Personal Task Management System dengan project organization, task tracking, dan 
 | Frontend | Vanilla HTML + Tailwind CSS (CDN) + Font Awesome v6 (CDN) |
 | JavaScript | Vanilla JS (IIFE, strict-mode, no framework) |
 | Testing | pytest, conftest SQLite in-memory |
-| Deployment | Docker (MySQL only for now) |
+| Deployment | Docker Compose — dev: MySQL only; prod: gunicorn + MySQL |
 
 ## ⚡ Quick Start
 
@@ -93,22 +95,28 @@ dashboardku/
 │   │   ├── project/
 │   │   └── task/
 │   ├── static/
-│   │   ├── css/style.css        # Tailwind CDN + custom
+│   │   ├── css/style.css        # Custom styles (state card, toast, kanban)
 │   │   └── js/
 │   │       ├── app.js
 │   │       ├── modal.js
 │   │       ├── form.js
 │   │       ├── dashboard.js
 │   │       ├── task.js
+│   │       ├── kanban.js        # Drag & drop board (SortableJS)
+│   │       ├── toast.js
 │   │       └── shortcuts.js
 │   └── utils/
 │       ├── decorators.py        # login_required
 │       └── filters.py           # Custom Jinja2 filters
 ├── alembic/                     # Migrations
 ├── archive/                     # Kode FastAPI lama (referensi history)
-├── docs/                        # Phase summaries, coding standards
+├── docs/                        # Phase summaries, coding standards, rencana
 ├── DESIGN.md                    # Design system (warna, tipografi, komponen)
-├── docker-compose.yml           # MySQL service only
+├── Dockerfile                   # Image production (gunicorn, non-root)
+├── docker-compose.yml           # Dev: MySQL only
+├── docker-compose.prod.yml      # Prod: app + MySQL
+├── entrypoint.sh                # wait-for-DB → alembic → gunicorn
+├── scripts/backup_db.sh         # Backup harian mysqldump (cron)
 ├── Makefile
 └── requirements.txt
 ```
@@ -118,7 +126,7 @@ dashboardku/
 | Method | Endpoint | Deskripsi |
 |--------|----------|-----------|
 | GET/POST | `/auth/login` | Login form / submit |
-| GET | `/auth/logout` | Logout |
+| POST | `/auth/logout` | Logout |
 | GET | `/` | Dashboard (stats + project grid) |
 | GET | `/projects` | List semua project |
 | GET/POST | `/projects/create` | Form buat project |
@@ -131,6 +139,11 @@ dashboardku/
 | GET/POST | `/tasks/<id>/edit` | Form edit task |
 | POST | `/tasks/<id>/delete` | Hapus task |
 | POST | `/tasks/<id>/complete` | Toggle completion (AJAX/PRG fallback) |
+| GET | `/tasks/kanban` | Board kanban 3 kolom drag & drop |
+| POST | `/tasks/<id>/status` | Ubah status (AJAX dari kanban) |
+| POST | `/tasks/<id>/archive` | Arsipkan tugas selesai |
+| GET | `/arsip` | Riwayat arsip (+ unarchive/hapus permanen) |
+| GET | `/pengaturan` | Toggle arsip otomatis + status scheduler |
 | GET | `/tasks/<id>` | Detail task |
 | GET | `/health` | Health check |
 
@@ -156,14 +169,20 @@ Salin `.env.example` → `.env` lalu sesuaikan:
 | `DB_HOST/PORT/NAME/USER/PASS` | ✅ | Koneksi MySQL |
 | `APP_USERNAME` | ✅ | Username login |
 | `APP_PASSWORD` | ✅* | Password plain (*atau gunakan `APP_PASSWORD_HASH`) |
-| `APP_PASSWORD_HASH` | ○ | bcrypt hash (generate: lihat bawah) |
+| `APP_PASSWORD_HASH` | ○ | bcrypt hash — di docker WAJIB escape `$` → `$$` (lihat bawah) |
 | `SECRET_KEY` | ✅ | Flask secret key — `openssl rand -hex 32` |
 | `DEBUG` | ○ | `false` untuk production |
+| `SESSION_COOKIE_SECURE` | ○ | `true` di production (HTTPS via cloudflared/tailscale) |
+| `SCHEDULER_ENABLED` | ○ | Default `true`; `false` untuk mematikan auto-archive |
 
 Generate bcrypt hash:
 ```bash
 python3 -c "import bcrypt; print(bcrypt.hashpw(b'password_anda', bcrypt.gensalt()).decode())"
 ```
+
+> ⚠️ **Docker + bcrypt hash**: `$` di env_file di-interpolasi docker compose — hash `$2b$12$abc...`
+> wajib ditulis `$$2b$$12$$abc...`, atau seed interaktif:
+> `docker compose -f docker-compose.prod.yml exec -it app flask create-user -p "password-anda"`
 
 ## 📊 Database Schema
 
@@ -192,7 +211,7 @@ Task di-mark complete / reopened
 Status berubah + completed_at di-set/unset
 ```
 
-**Note**: Notification & scheduler akan diimplementasikan di Phase 4 (pending).
+**Note**: Arsip otomatis via scheduler sudah jalan (toggle di Pengaturan); pengiriman notifikasi webhook akan diimplementasikan di Phase 4.
 
 ## 🧪 Testing
 
@@ -203,31 +222,50 @@ Test suite lengkap dengan pytest — semua lulus:
 .venv/bin/python -m pytest -v
 ```
 
-Coverage (43/43 pass):
-- **Auth** (8 test): login valid/invalid, session, protected routes, seed user
-- **Projects** (11 test): CRUD, archive, count, filter
-- **Tasks** (14 test): CRUD, toggle complete, state machine, Day-H sync, deadline overdue
-- **Stats** (3 test): dashboard count queries, aggregate performance
-- **Integration** (7 test): PRG pattern, flash messages, AJAX JSON responses, anti N+1
+Coverage (104 test pass): auth & session, projects CRUD/archive, tasks CRUD + state machine + Day-H sync,
+kanban board & endpoint status, arsip & auto-archive scheduler, settings, dashboard stats,
+integrasi PRG/flash/AJAX JSON, anti N+1.
 
-## 🚀 Deployment
+## 🚀 Deployment (Docker Production)
 
-**Phase 5 (Pending)** — Deployment Docker akan diimplementasikan setelah Phase 4 selesai.
+Stack production: **app (gunicorn, non-root) + MySQL 8.0** via `docker-compose.prod.yml`.
+Detail lengkap arsitektur & runbook: [docs/2026-08-29 - Rencana Deployment Production.md](docs/2026-08-29%20-%20Rencana%20Deployment%20Production.md)
 
-**Untuk sekarang**: Gunakan development mode via venv (lihat Quick Start di atas).
+```bash
+# 1. Siapkan env production (di server, gitignored)
+cp .env.production.example .env.production && $EDITOR .env.production && chmod 600 .env.production
 
-**Future checklist**:
-- Dockerfile dengan gunicorn
-- docker-compose.yml (service aplikasi + MySQL)
-- HTTPS (reverse proxy Caddy/nginx)
-- Rate limiting login
-- Hardening security headers
+# 2. Naikkan stack (entrypoint: wait-for-DB → alembic upgrade → gunicorn)
+docker compose -f docker-compose.prod.yml up -d --build
+
+# 3. Seed user awal (interaktif — tanpa menyimpan password di env)
+docker compose -f docker-compose.prod.yml exec -it app flask create-user -p "password-anda"
+
+# 4. Verifikasi
+curl -s http://localhost:5000/health
+docker compose -f docker-compose.prod.yml ps   # keduanya healthy
+```
+
+Catatan desain:
+- **Scheduler aman** — gunicorn 1 worker + 4 threads (job arsip otomatis tepat jalan 1x) + `TZ=Asia/Jakarta`
+- **MySQL tanpa published port** — akses admin via `docker compose exec`
+- **Migrasi otomatis** saat container start (idempoten), volume `mysql_prod_data` terpisah dari dev
+- **ProxyFix** aktif — cocok di belakang cloudflared / tailscale serve (1 hop)
 
 ### Backup & Restore Database
+
 ```bash
-# Backup
-docker compose exec mysql mysqldump -u root -prootpass dashboardku > backup.sql
+# Backup harian (gzip → ./backups/, keep 7 hari) — untuk cron
+./scripts/backup_db.sh
+
 # Restore
+gunzip -c backups/db-YYYY-MM-DD.sql.gz | \
+  docker compose -f docker-compose.prod.yml exec -T mysql mysql -u root -p"$MYSQL_ROOT_PASSWORD" "$DB_NAME"
+```
+
+Dev (MySQL via docker-compose.yml):
+```bash
+docker compose exec mysql mysqldump -u root -prootpass dashboardku > backup.sql
 cat backup.sql | docker compose exec -T mysql mysql -u root -prootpass dashboardku
 ```
 
@@ -238,16 +276,17 @@ cat backup.sql | docker compose exec -T mysql mysql -u root -prootpass dashboard
 | 1. Foundation | Flask, MySQL, models, auth | ✅ Complete |
 | 2. Connect Real DB | ORM, aggregate queries, Day-H sync | ✅ Complete |
 | 3. Frontend Polish | Skeleton, AJAX toggle, shortcuts, a11y | ✅ Complete |
-| 4. Notification & Scheduler | Webhook, retry, logging, settings | ⏳ Pending |
-| 5. Deployment Docker | Dockerfile, docker-compose, production | ⏳ Pending |
+| 4. Notification & Scheduler | Webhook, retry, logging | ⏳ Parsial (arsip otomatis + Pengaturan jalan; notifikasi menyusul) |
+| 5. Deployment Docker | Dockerfile, docker-compose, production | ✅ Complete (2026-08-30) |
 
-**Progress: 60% (3/5 phases)** — detail per phase di [docs/2026-08-27 - Rencana Migrasi Flask.md](docs/2026-08-27%20-%20Rencana%20Migrasi%20Flask.md)
+**Progress: 80% (4/5 phases)** — detail per phase di [docs/2026-08-27 - Rencana Migrasi Flask.md](docs/2026-08-27%20-%20Rencana%20Migrasi%20Flask.md)
 
 ## 📚 Dokumentasi
 
 - [DESIGN.md](DESIGN.md) — Design system (warna, tipografi, komponen, shortcuts)
 - [AGENTS.md](AGENTS.md) — Coding standards + mapping archetype
 - [docs/2026-08-27 - Rencana Migrasi Flask.md](docs/2026-08-27%20-%20Rencana%20Migrasi%20Flask.md) — Roadmap lengkap 5 phase
+- [docs/2026-08-29 - Rencana Deployment Production.md](docs/2026-08-29%20-%20Rencana%20Deployment%20Production.md) — Arsitektur deploy, runbook, backup
 - [docs/coding-standards/](docs/coding-standards/) — Rule files untuk controller, service, model, view, form, dll.
 
 ## 📝 License
@@ -256,4 +295,4 @@ MIT
 
 ---
 
-**Version**: 2.0.0 (Flask) | **Updated**: August 27, 2026 | **Status**: Beta ✅
+**Version**: 2.1.0 (Flask + Docker prod) | **Updated**: August 30, 2026 | **Status**: Beta ✅
