@@ -36,11 +36,16 @@ class Config:
     # Session — minimum hardening (16-security.md)
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
+    # HTTPS-only cookie — aktif via env di production (cloudflared/tailscale serve)
+    SESSION_COOKIE_SECURE = _bool(os.environ.get("SESSION_COOKIE_SECURE"), default="false")
     PERMANENT_SESSION_LIFETIME = timedelta(days=1)
 
-    # Seed user default (dipakai `flask create-user` bila tanpa argumen)
+    # Seed user default (dipakai `flask create-user` bila tanpa argumen).
+    # APP_PASSWORD_HASH (bcrypt literal) diutamakan — password plain tidak
+    # tersimpan di env production.
     APP_USERNAME = os.environ.get("APP_USERNAME", "admin")
     APP_PASSWORD = os.environ.get("APP_PASSWORD", "changeme")
+    APP_PASSWORD_HASH = os.environ.get("APP_PASSWORD_HASH")
 
     # Background scheduler (arsip otomatis) — off di test, env-overridable
     SCHEDULER_ENABLED = _bool(os.environ.get("SCHEDULER_ENABLED"), default="true")

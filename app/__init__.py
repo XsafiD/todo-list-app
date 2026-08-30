@@ -12,6 +12,12 @@ def create_app(config_class: type[Config] = Config) -> Flask:
     app = Flask(__name__)
     app.config.from_object(config_class)
 
+    # Di belakang proxy (cloudflared / tailscale serve, tepat 1 hop) agar
+    # remote_addr & scheme benar (18-deployment.md #7)
+    from werkzeug.middleware.proxy_fix import ProxyFix
+
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1)
+
     _init_extensions(app)
     _register_blueprints(app)
     _register_error_handlers(app)

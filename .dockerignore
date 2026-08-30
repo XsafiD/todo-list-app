@@ -1,0 +1,21 @@
+# Semua yang tidak dibutuhkan runtime production — image kecil & secret tidak ke-baked
+.git
+.gitignore
+.gitmodules
+.venv
+.env
+.env.*
+!.env.production.example
+archive/
+docs/
+tests/
+backups/
+.pytest_cache/
+__pycache__/
+*.pyc
+*.log
+.mcp.json
+opencode.json
+Makefile
+docker-compose*.yml
+*.md
