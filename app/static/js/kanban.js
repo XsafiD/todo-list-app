@@ -78,7 +78,11 @@
         animation: 150,
         ghostClass: "kanban-ghost",
         dragClass: "kanban-drag",
+        onStart: function () {
+          board.classList.add("is-dragging");
+        },
         onEnd: function (evt) {
+          board.classList.remove("is-dragging");
           if (evt.from === evt.to) return;
           var card = evt.item;
           var status = columnOf(evt.to).getAttribute("data-kanban-column");

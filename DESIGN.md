@@ -20,8 +20,8 @@ Inter UI (via Google Fonts) anchors the entire system, ranging from a 32px secti
 - **Primary Blue** ({colors.primary}): The main CTA color. Used on every "Create task", "Save", "Add project" button.
 - **Primary Deep** ({colors.primary-deep}): Pressed-state and dark-surface variant of primary.
 - **Primary Soft** ({colors.primary-soft}): Translucent background tint for active states (`{colors.primary-soft}` at 10% alpha).
-- **Success Green** ({colors.success}): "Task completed", "Project archived" affirmations.
-- **Warning Amber** ({colors.warning}): "Deadline approaching", "Overdue" indicators.
+- **Success Green** ({colors.success}): "Task completed", "Project archived" affirmations. Soft tint `{colors.success-soft}` (10% alpha) untuk background kolom Selesai.
+- **Warning Amber** ({colors.warning}): "Deadline approaching", "Overdue" indicators. Soft tint `{colors.warning-soft}` (10% alpha) untuk background kolom Proses.
 - **Critical Red** ({colors.critical}): "Missed deadline", "Delete" actions.
 
 ### Project Colors (Tags)
@@ -252,7 +252,9 @@ The system runs predominantly flat. Elevation is reserved for two interaction la
 
 **`kanban-board`** — Board 3 kolom per status (Todo, Proses, Selesai) — drag & drop untuk ubah status.
 - Grid 3 kolom desktop (`{spacing.md}` gap), stack 1 kolom mobile.
-- Kolom: background `{colors.surface-soft}` 60% alpha, rounded `{rounded.lg}`, border `1px solid {colors.hairline}`; header `{typography.subtitle-md}` + counter pill (`{colors.surface}` bg, `{colors.slate}` text).
+- Kolom: rounded `{rounded.lg}`, border `1px solid` senada + tint background per status — Todo abu soft (`{colors.hairline}` 40% alpha), Proses `{colors.warning-soft}`, Selesai `{colors.success-soft}`.
+- Header: dot aksen 8px + label `{typography.subtitle-md}` + counter pill (`{colors.surface}` bg; teks `{colors.slate}` / `{colors.warning-ink}` / `{colors.success-ink}` per kolom), divider warna senada kolom.
+- Saat drag aktif: board dapat class `is-dragging` → area kartu tiap kolom diberi outline 1px dashed sebagai cue drop target.
 - Kartu di-drop ke kolom lain → POST status via AJAX → toast; gagal → revert posisi.
 - Reorder dalam kolom sama tidak dipersist (tanpa field urutan).
 
@@ -260,7 +262,7 @@ The system runs predominantly flat. Elevation is reserved for two interaction la
 - Background `{colors.surface}`, rounded `{rounded.lg}`, padding `{spacing.md}`, border `1px solid {colors.hairline}`; overdue: left border `4px solid {colors.critical}`.
 - Isi: judul (2-line clamp, link ke detail), `badge-priority`, `tag-project`, `badge-deadline`.
 - Done: judul `{colors.stone}` + strikethrough (`is-done`).
-- Drag: cursor grab; ghost saat drag = opacity 0.4 + border dashed; kartu terangkat = elevasi level 1; fallback keyboard/touch = tombol "Pindah" ‹ › di footer kartu.
+- Hover: lift `translateY(-2px)` + elevasi level 1; Drag: cursor grab; ghost saat drag = opacity 0.4 + border dashed; kartu terangkat = elevasi level 1; fallback keyboard/touch = tombol "Pindah" ‹ › di footer kartu.
 
 **`project-detail`** — Project overview with stats + task list.
 - Header: Project name, color tag, stats (total/active/completed).

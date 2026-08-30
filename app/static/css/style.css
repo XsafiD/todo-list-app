@@ -58,10 +58,17 @@
 /* ── Kanban board (kanban.js — SortableJS) ── */
 [data-kanban-card] {
   cursor: grab;
+  transition: box-shadow 150ms ease-out, transform 150ms ease-out;
 }
 
 [data-kanban-card]:active {
   cursor: grabbing;
+}
+
+/* Micro-interaction hover — lift -2px + elevasi level 1 (DESIGN.md) */
+[data-kanban-card]:hover:not(.kanban-drag):not(.kanban-ghost) {
+  transform: translateY(-2px);
+  box-shadow: rgba(0, 0, 0, 0.08) 0px 2px 8px 0px;
 }
 
 /* Placeholder selama drag — kartu "hantu" di posisi target */
@@ -79,11 +86,19 @@
 [data-kanban-card].is-loading {
   opacity: 0.6;
   pointer-events: none;
+  transform: none;
 }
 
 [data-kanban-card].is-done [data-kanban-title] {
   color: #646B7C;
   text-decoration: line-through;
+}
+
+/* Cue drop target — outline dashed tipis di area kartu selama drag aktif */
+[data-kanban-board].is-dragging [data-kanban-cards] {
+  outline: 1px dashed rgba(107, 114, 128, 0.4);
+  outline-offset: 2px;
+  border-radius: 8px;
 }
 
 /* Input datetime-local: samakan lebar minimal */
