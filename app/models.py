@@ -2,8 +2,8 @@
 
 Tabel: users (BARU — autentikasi), projects, tasks, reminders, webhook_configs,
 notification_logs. Kolom 5 tabel domain TETAP sama dengan skema lama (lihat
-docs/2026-08-27 - Backend & Database Analysis.md); hanya `users` yang ditambahkan
-untuk migrasi Flask.
+docs/archive/2026-08-27 - Backend & Database Analysis.md); hanya `users` yang
+ditambahkan untuk migrasi Flask.
 """
 from __future__ import annotations
 

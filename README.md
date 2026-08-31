@@ -279,13 +279,13 @@ cat backup.sql | docker compose exec -T mysql mysql -u root -prootpass dashboard
 | 4. Notification & Scheduler | Webhook, retry, logging | ⏳ Parsial (arsip otomatis + Pengaturan jalan; notifikasi menyusul) |
 | 5. Deployment Docker | Dockerfile, docker-compose, production | ✅ Complete (2026-08-30) |
 
-**Progress: 80% (4/5 phases)** — detail per phase di [docs/2026-08-27 - Rencana Migrasi Flask.md](docs/2026-08-27%20-%20Rencana%20Migrasi%20Flask.md)
+**Progress: 80% (4/5 phases)** — detail per phase di [docs/archive/2026-08-27 - Rencana Migrasi Flask.md](docs/archive/2026-08-27%20-%20Rencana%20Migrasi%20Flask.md) (roadmap selesai tereksekusi, diarsipkan)
 
 ## 📚 Dokumentasi
 
 - [DESIGN.md](DESIGN.md) — Design system (warna, tipografi, komponen, shortcuts)
 - [AGENTS.md](AGENTS.md) — Coding standards + mapping archetype
-- [docs/2026-08-27 - Rencana Migrasi Flask.md](docs/2026-08-27%20-%20Rencana%20Migrasi%20Flask.md) — Roadmap lengkap 5 phase
+- [docs/archive/2026-08-27 - Rencana Migrasi Flask.md](docs/archive/2026-08-27%20-%20Rencana%20Migrasi%20Flask.md) — Roadmap 5 phase migrasi (selesai, diarsipkan)
 - [docs/2026-08-29 - Rencana Deployment Production.md](docs/2026-08-29%20-%20Rencana%20Deployment%20Production.md) — Arsitektur deploy, runbook, backup
 - [docs/coding-standards/](docs/coding-standards/) — Rule files untuk controller, service, model, view, form, dll.
 

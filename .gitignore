@@ -98,3 +98,6 @@ coverage.xml
 # Config with credentials (local only)
 .mcp.json
 opencode.json
+
+# Understand-anything knowledge graph (generated)
+.ua/
