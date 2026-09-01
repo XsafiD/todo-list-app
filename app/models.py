@@ -1,9 +1,10 @@
 """Model ORM Dashboardku (Flask-SQLAlchemy).
 
-Tabel: users (BARU — autentikasi), projects, tasks, reminders, webhook_configs,
-notification_logs. Kolom 5 tabel domain TETAP sama dengan skema lama (lihat
-docs/archive/2026-08-27 - Backend & Database Analysis.md); hanya `users` yang
-ditambahkan untuk migrasi Flask.
+Tabel: users (BARU — autentikasi), projects, tasks, task_notes (BARU —
+timeline proses), reminders, webhook_configs, notification_logs. Kolom 5
+tabel domain TETAP sama dengan skema lama (lihat docs/archive/2026-08-27 -
+Backend & Database Analysis.md); `users` dan `task_notes` ditambahkan untuk
+migrasi Flask.
 """
 from __future__ import annotations
 
@@ -139,6 +140,11 @@ class Task(db.Model):
     reminders: Mapped[list[Reminder]] = relationship(
         back_populates="task", cascade="all, delete-orphan", lazy="selectin"
     )
+    # lazy="select": notes hanya dimuat eksplisit di detail — list/kanban
+    # tidak ikut memuat catatan (beda dari reminders yang dipakai scheduler).
+    notes: Mapped[list[TaskNote]] = relationship(
+        back_populates="task", cascade="all, delete-orphan", lazy="select"
+    )
 
     # ── State machine (transisi via method model — 02-model.md #3) ──
     def apply_status(self, new_status: "TaskStatus") -> None:
@@ -183,6 +189,27 @@ class Task(db.Model):
     def unarchive(self) -> None:
         """Transisi: terarsipkan → aktif (clear `archived_at`, status tetap done)."""
         self.archived_at = None
+
+
+class TaskNote(db.Model):
+    """TransactionLine — catatan timeline proses milik task.
+
+    Append-only (tambah + hapus, tanpa edit); timestamp `created_at`
+    adalah penanda timeline. Task terhapus → catatan ikut terhapus (CASCADE).
+    """
+
+    __tablename__ = "task_notes"
+    __table_args__ = (Index("idx_task_notes_task_id", "task_id"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    task_id: Mapped[int] = mapped_column(Integer, ForeignKey("tasks.id", ondelete="CASCADE"), nullable=False)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
+
+    task: Mapped[Task] = relationship(back_populates="notes")
+
+    def __repr__(self) -> str:
+        return f"<TaskNote id={self.id} task_id={self.task_id}>"
 
 
 class Reminder(db.Model):

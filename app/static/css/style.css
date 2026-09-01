@@ -101,6 +101,23 @@
   border-radius: 8px;
 }
 
+/* ── Timeline Proses (task detail) ── */
+/* Garis penghubung antar titik timeline; item terakhir tanpa garis */
+[data-timeline-item]::before {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 18px;
+  bottom: 0;
+  width: 2px;
+  border-radius: 9999px;
+  background-color: #E5E7EB;
+}
+
+[data-timeline-item]:last-child::before {
+  display: none;
+}
+
 /* Input datetime-local: samakan lebar minimal */
 input[type="datetime-local"] {
   min-width: 0;

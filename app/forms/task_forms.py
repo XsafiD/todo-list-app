@@ -3,6 +3,8 @@ from flask_wtf import FlaskForm
 from wtforms import DateTimeLocalField, SelectField, StringField, TextAreaField
 from wtforms.validators import DataRequired, Length, Optional
 
+from app.services.note_service import NOTE_MAX_LENGTH
+
 PRIORITY_CHOICES = [("low", "Rendah"), ("medium", "Sedang"), ("high", "Tinggi")]
 STATUS_CHOICES = [("todo", "Todo"), ("in_progress", "Sedang Dikerjakan"), ("done", "Selesai")]
 
@@ -28,3 +30,20 @@ class TaskForm(FlaskForm):
     priority = SelectField("Prioritas", choices=PRIORITY_CHOICES, default="medium")
     status = SelectField("Status", choices=STATUS_CHOICES, default="todo")
     deadline = DateTimeLocalField("Deadline", format="%Y-%m-%dT%H:%M", validators=[Optional()])
+
+
+class NoteForm(FlaskForm):
+    """Catatan timeline proses — dipakai di halaman detail task."""
+
+    content = TextAreaField(
+        "Catatan",
+        validators=[
+            DataRequired(message="Catatan wajib diisi."),
+            Length(max=NOTE_MAX_LENGTH, message=f"Catatan maksimal {NOTE_MAX_LENGTH} karakter."),
+        ],
+        render_kw={
+            "rows": 3,
+            "maxlength": NOTE_MAX_LENGTH,
+            "placeholder": "Tulis catatan progres untuk tugas ini...",
+        },
+    )

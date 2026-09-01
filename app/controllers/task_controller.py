@@ -4,18 +4,21 @@ controllers/task_controller.py — Blueprint ``task_bp``.
 Routes (semua login_required):
   - GET/POST /tasks/                — daftar (filter via query params)
   - GET/POST /tasks/create          — tambah baru (?project_id= preselect)
-  - GET      /tasks/<id>            — detail
+  - GET      /tasks/<id>            — detail (+ timeline catatan)
   - GET/POST /tasks/<id>/edit       — edit
   - POST     /tasks/<id>/complete   — toggle selesai
   - POST     /tasks/<id>/status     — ubah status (drag & drop kanban, JSON)
   - POST     /tasks/<id>/archive    — arsipkan task done
   - POST     /tasks/<id>/unarchive  — keluarkan dari arsip
   - POST     /tasks/<id>/delete     — hapus (next= kembali ke halaman asal)
+  - POST     /tasks/<id>/notes      — tambah catatan timeline
+  - POST     /tasks/<id>/notes/<note_id>/delete — hapus catatan timeline
   - GET      /tasks/kanban          — board kanban 3 kolom per status
 """
 from flask import Blueprint, abort, flash, jsonify, redirect, render_template, request, url_for
 
-from app.forms.task_forms import STATUS_CHOICES, PRIORITY_CHOICES, TaskForm, project_choices
+from app.forms.task_forms import STATUS_CHOICES, PRIORITY_CHOICES, NoteForm, TaskForm, project_choices
+from app.services.note_service import note_service
 from app.services.project_service import project_service
 from app.services.task_service import task_service
 from app.utils.decorators import login_required
@@ -110,7 +113,12 @@ def create():
 @login_required
 def detail(task_id: int):
     task = _get_task_or_404(task_id)
-    return render_template("task/detail.html", task=task)
+    return render_template(
+        "task/detail.html",
+        task=task,
+        notes=note_service.get_for_task(task_id),
+        note_form=NoteForm(),
+    )
 
 
 @task_bp.route("/<int:task_id>/edit", methods=["GET", "POST"])
@@ -153,6 +161,33 @@ def complete(task_id: int):
         )
     flash(message, "success")
     return redirect(request.form.get("next") or url_for("task.detail", task_id=task_id))
+
+
+@task_bp.route("/<int:task_id>/notes", methods=["POST"])
+@login_required
+def add_note(task_id: int):
+    """Tambah catatan timeline — task terarsip ditolak di service."""
+    form = NoteForm()
+    if form.validate_on_submit():
+        try:
+            note_service.add_note(task_id, form.content.data)
+            flash("Catatan ditambahkan ke timeline.", "success")
+        except ValueError as err:
+            flash(str(err), "error")
+    else:
+        flash(form.content.errors[0] if form.content.errors else "Catatan tidak valid.", "error")
+    return redirect(url_for("task.detail", task_id=task_id))
+
+
+@task_bp.route("/<int:task_id>/notes/<int:note_id>/delete", methods=["POST"])
+@login_required
+def delete_note(task_id: int, note_id: int):
+    try:
+        note_service.delete_note(task_id, note_id)
+    except ValueError:
+        abort(404)
+    flash("Catatan timeline dihapus.", "success")
+    return redirect(url_for("task.detail", task_id=task_id))
 
 
 @task_bp.route("/kanban")
