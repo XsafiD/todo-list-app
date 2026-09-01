@@ -31,6 +31,7 @@ class TaskView:
     project_color: str | None
     title: str
     description: str | None
+    assignee: str | None
     priority: str
     status: str
     deadline: datetime | None
@@ -90,6 +91,7 @@ def _to_view(task: Task, now: datetime) -> TaskView:
         project_color=task.project.color if task.project else None,
         title=task.title,
         description=task.description,
+        assignee=task.assignee,
         priority=task.priority.value,
         status=status,
         deadline=task.deadline,
@@ -215,7 +217,7 @@ class TaskService:
         )
 
     # ── Validasi (multi-layer: border form + sini — 16-security.md #4) ──
-    def _validate(self, title: str, priority: str, status: str) -> None:
+    def _validate(self, title: str, priority: str, status: str, assignee: str | None = None) -> None:
         if not title or not title.strip():
             raise ValueError("Judul tugas wajib diisi.")
         if len(title.strip()) > 500:
@@ -224,21 +226,25 @@ class TaskService:
             raise ValueError("Prioritas harus low, medium, atau high.")
         if status not in STATUS_VALUES:
             raise ValueError("Status harus todo, in_progress, atau done.")
+        if assignee is not None and len(assignee.strip()) > 255:
+            raise ValueError("Penanggung jawab maksimal 255 karakter.")
 
     # ── Write ──
     def create(
         self,
         title: str,
         description: str | None = None,
+        assignee: str | None = None,
         project_id=None,
         priority: str = "medium",
         status: str = "todo",
         deadline: datetime | None = None,
     ) -> Task:
-        self._validate(title, priority, status)
+        self._validate(title, priority, status, assignee)
         task = Task(
             title=title.strip(),
             description=(description or "").strip() or None,
+            assignee=(assignee or "").strip() or None,
             project_id=_resolve_project_id(project_id),
             priority=TaskPriority(priority),
             deadline=deadline,
@@ -255,6 +261,7 @@ class TaskService:
         task_id: int,
         title: str,
         description: str | None = None,
+        assignee: str | None = None,
         project_id=None,
         priority: str = "medium",
         status: str = "todo",
@@ -263,10 +270,11 @@ class TaskService:
         task = db.session.get(Task, task_id)
         if task is None:
             raise ValueError("Tugas tidak ditemukan.")
-        self._validate(title, priority, status)
+        self._validate(title, priority, status, assignee)
 
         task.title = title.strip()
         task.description = (description or "").strip() or None
+        task.assignee = (assignee or "").strip() or None
         task.project_id = _resolve_project_id(project_id)
         task.priority = TaskPriority(priority)
         task.deadline = deadline

@@ -20,6 +20,7 @@
     {{ form.hidden_tag() }}
     {{ text_field(form.title, placeholder="mis. Finalisasi laporan bulanan") }}
     {{ textarea_field(form.description, placeholder="Detail tugas (opsional)") }}
+    {{ text_field(form.assignee, placeholder="mis. Divisi Ekraf") }}
     {{ select_field(form.project_id) }}
     {{ select_field(form.priority) }}
     {{ select_field(form.status) }}

@@ -26,6 +26,10 @@ class TaskForm(FlaskForm):
         Length(min=1, max=500, message="Judul maksimal 500 karakter."),
     ])
     description = TextAreaField("Deskripsi", validators=[Optional()])
+    assignee = StringField(
+        "Penanggung Jawab",
+        validators=[Optional(), Length(max=255, message="Penanggung jawab maksimal 255 karakter.")],
+    )
     project_id = SelectField("Project", choices=[("", "Tanpa Project (Inbox)")], coerce=str)
     priority = SelectField("Prioritas", choices=PRIORITY_CHOICES, default="medium")
     status = SelectField("Status", choices=STATUS_CHOICES, default="todo")

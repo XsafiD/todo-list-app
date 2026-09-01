@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "components/badge.html" import deadline_badge, priority_badge, project_tag, status_badge %}
+{% from "components/badge.html" import assignee_badge, deadline_badge, priority_badge, project_tag, status_badge %}
 {% from "components/modal.html" import confirm_modal, confirm_modal_dynamic %}
 {% from "components/page_path.html" import page_path %}
 
@@ -23,6 +23,7 @@
       <div class="mt-3 flex flex-wrap items-center gap-2">
         {{ status_badge(task.status) }}
         {{ priority_badge(task.priority) }}
+        {{ assignee_badge(task.assignee) }}
         {% if task.deadline %}{{ deadline_badge(task.deadline_state, task.deadline_label) }}{% endif %}
       </div>
     </div>
@@ -52,13 +53,7 @@
   {% endif %}
 
   {# ── Meta grid ── #}
-  <div class="mt-6 grid grid-cols-2 gap-4 border-t border-hairline-soft pt-5 md:grid-cols-4">
-    {% set meta = [
-      {"label": "Project", "icon": "fa-folder-open"},
-      {"label": "Prioritas", "icon": "fa-flag"},
-      {"label": "Deadline", "icon": "fa-regular fa-clock"},
-      {"label": "Dibuat", "icon": "fa-calendar-plus"},
-    ] %}
+  <div class="mt-6 grid grid-cols-2 gap-4 border-t border-hairline-soft pt-5 md:grid-cols-5">
     <div>
       <p class="text-[12px] font-medium uppercase tracking-wide text-steel">
         <i class="fa-solid fa-folder-open mr-1.5" aria-hidden="true"></i>Project
@@ -70,6 +65,14 @@
         <i class="fa-solid fa-flag mr-1.5" aria-hidden="true"></i>Prioritas
       </p>
       <div class="mt-1.5">{{ priority_badge(task.priority) }}</div>
+    </div>
+    <div>
+      <p class="text-[12px] font-medium uppercase tracking-wide text-steel">
+        <i class="fa-solid fa-user mr-1.5" aria-hidden="true"></i>Penanggung Jawab
+      </p>
+      <div class="mt-1.5">
+        {% if task.assignee %}{{ assignee_badge(task.assignee) }}{% else %}<span class="text-[14px] text-slate">—</span>{% endif %}
+      </div>
     </div>
     <div>
       <p class="text-[12px] font-medium uppercase tracking-wide text-steel">

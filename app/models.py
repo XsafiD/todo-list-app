@@ -125,6 +125,7 @@ class Task(db.Model):
     )
     title: Mapped[str] = mapped_column(String(500), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    assignee: Mapped[str | None] = mapped_column(String(255), nullable=True)
     priority: Mapped[TaskPriority] = mapped_column(
         SQLEnum(TaskPriority, name="task_priority"), default=TaskPriority.MEDIUM, nullable=False
     )

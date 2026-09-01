@@ -50,6 +50,40 @@ class TestTaskService:
         with pytest.raises(ValueError, match="Project tidak ditemukan"):
             task_service.create(title="X", project_id=999)
 
+    def test_create_dengan_assignee(self, app):
+        task = task_service.create(title="Koordinasi acara", assignee="Divisi Ekraf")
+        assert task.assignee == "Divisi Ekraf"
+
+    def test_create_assignee_kosong_jadi_none(self, app):
+        task = task_service.create(title="Tanpa PJ", assignee="   ")
+        assert task.assignee is None
+
+    def test_create_assignee_kepanjangan_valueerror(self, app):
+        with pytest.raises(ValueError, match="Penanggung jawab maksimal"):
+            task_service.create(title="X", assignee="a" * 256)
+
+    def test_update_assignee_set_dan_hapus(self, sample_task):
+        task_service.update(
+            sample_task.id,
+            title=sample_task.title,
+            assignee="Divisi Ekraf",
+            project_id=sample_task.project_id,
+            priority="high",
+            status="todo",
+            deadline=sample_task.deadline,
+        )
+        assert sample_task.assignee == "Divisi Ekraf"
+        task_service.update(
+            sample_task.id,
+            title=sample_task.title,
+            assignee="",
+            project_id=sample_task.project_id,
+            priority="high",
+            status="todo",
+            deadline=sample_task.deadline,
+        )
+        assert sample_task.assignee is None
+
     def test_toggle_complete_jaga_completed_at(self, sample_task):
         sample_task  # noqa: B018 — fixture trigger
         done = task_service.toggle_complete(sample_task.id)
@@ -165,6 +199,7 @@ class TestTaskRoutes:
             data={
                 "title": "Tugas dari browser",
                 "description": "Deskripsi",
+                "assignee": "Divisi Ekraf",
                 "project_id": str(sample_project.id),
                 "priority": "high",
                 "status": "todo",
@@ -176,8 +211,24 @@ class TestTaskRoutes:
         task = db.session.query(Task).filter_by(title="Tugas dari browser").first()
         assert task is not None
         assert task.priority.value == "high"
+        assert task.assignee == "Divisi Ekraf"
         assert task.deadline == datetime(2026, 9, 5, 14, 30)
         assert _day_h_count(task.id) == 1
+
+    def test_detail_render_badge_penanggung_jawab(self, client, login_user, sample_task):
+        task_service.update(
+            sample_task.id,
+            title=sample_task.title,
+            assignee="Divisi Ekraf",
+            project_id=sample_task.project_id,
+            priority="high",
+            status="todo",
+            deadline=sample_task.deadline,
+        )
+        body = client.get(f"/tasks/{sample_task.id}").data.decode()
+        assert "Divisi Ekraf" in body
+        assert "fa-user" in body  # ikon badge penanggung jawab
+        assert "Penanggung Jawab" in body  # label meta grid (5 item)
 
     def test_detail_404_bila_tidak_ada(self, client, login_user):
         assert client.get("/tasks/999").status_code == 404
@@ -218,6 +269,19 @@ class TestTaskRoutes:
         body = response.data.decode()
         assert "Finalisasi laporan" in body
         assert 'value="high"' in body  # priority ter-select
+
+    def test_edit_prefill_assignee(self, client, login_user, sample_task):
+        task_service.update(
+            sample_task.id,
+            title=sample_task.title,
+            assignee="Divisi Ekraf",
+            project_id=sample_task.project_id,
+            priority="high",
+            status="todo",
+            deadline=sample_task.deadline,
+        )
+        body = client.get(f"/tasks/{sample_task.id}/edit").data.decode()
+        assert 'value="Divisi Ekraf"' in body
 
 
 class TestKanbanRoutes:
