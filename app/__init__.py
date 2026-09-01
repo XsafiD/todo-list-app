@@ -22,7 +22,7 @@ def create_app(config_class: type[Config] = Config) -> Flask:
     _register_blueprints(app)
     _register_error_handlers(app)
     _register_template_filters(app)
-    _register_cli(app)
+    _register_request_hooks(app)
     _init_scheduler(app)
 
     return app
@@ -103,10 +103,30 @@ def _register_template_filters(app: Flask) -> None:
     register_filters(app)
 
 
-def _register_cli(app: Flask) -> None:
-    from app.cli import register_cli
+def _register_request_hooks(app: Flask) -> None:
+    """Setup mode guard — redirect semua route ke /auth/setup saat belum ada user.
 
-    register_cli(app)
+    Exempt: auth.setup, main.health, static (CSS/JS untuk halaman setup sendiri).
+    Guard dijalankan DI BELAKANG blueprint registration sehingga endpoint sudah
+    dikenali.
+    """
+    from flask import redirect, request, url_for
+    from sqlalchemy.exc import OperationalError, ProgrammingError
+
+    SETUP_EXEMPT_ENDPOINTS = {"auth.setup", "main.health", "static"}
+
+    @app.before_request
+    def _setup_mode_guard():
+        if request.endpoint in SETUP_EXEMPT_ENDPOINTS or request.endpoint is None:
+            return None
+        try:
+            from app.services.auth_service import auth_service
+
+            if not auth_service.has_any_user():
+                return redirect(url_for("auth.setup"))
+        except (OperationalError, ProgrammingError):
+            return None  # tabel belum ada (alembic belum jalan) — biarkan error handler
+        return None
 
 
 def _init_scheduler(app: Flask) -> None:

@@ -48,22 +48,19 @@ docker compose up -d mysql
 # 4. Migrasi database
 alembic upgrade head
 
-# 5. Seed default user
-flask create-user
-
-# 6. Jalankan Flask dev server
+# 5. Jalankan Flask dev server
 flask run
 ```
 
 **Akses aplikasi**: http://localhost:5000
 
-**Default login**: `admin` / `changeme` — **ganti di `.env` sebelum production!**
+**Setup awal**: Buka browser → akan otomatis redirect ke halaman "Buat Akun" untuk membuat akun pertama (hanya sekali). Setelah itu, login seperti biasa.
 
 ### Makefile Shortcut
 
 ```bash
 # Semua langkah di atas dalam satu command
-make mysql-up && make migrate-up && make seed-user && make dev
+make mysql-up && make migrate-up && make dev
 ```
 
 ## 📁 Project Structure
@@ -125,6 +122,7 @@ dashboardku/
 
 | Method | Endpoint | Deskripsi |
 |--------|----------|-----------|
+| GET/POST | `/auth/setup` | Setup awal — buat akun pertama (hanya saat users kosong, setelah itu 404) |
 | GET/POST | `/auth/login` | Login form / submit |
 | POST | `/auth/logout` | Logout |
 | GET | `/` | Dashboard (stats + project grid) |
@@ -155,7 +153,6 @@ dashboardku/
 | `make mysql-up` / `mysql-down` | Start/stop MySQL container |
 | `make migrate-up` / `migrate-down` | Apply/rollback migrations |
 | `make migrate-revision MESSAGE="..."` | Buat migration baru |
-| `make seed-user` | Create/reset seed user (dari .env) |
 | `make mysql-shell` | Masuk MySQL CLI |
 | `make mysql-logs` | Lihat MySQL logs |
 | `make help` | Semua commands |
@@ -167,22 +164,13 @@ Salin `.env.example` → `.env` lalu sesuaikan:
 | Variable | Wajib | Keterangan |
 |----------|-------|------------|
 | `DB_HOST/PORT/NAME/USER/PASS` | ✅ | Koneksi MySQL |
-| `APP_USERNAME` | ✅ | Username login |
-| `APP_PASSWORD` | ✅* | Password plain (*atau gunakan `APP_PASSWORD_HASH`) |
-| `APP_PASSWORD_HASH` | ○ | bcrypt hash — di docker WAJIB escape `$` → `$$` (lihat bawah) |
 | `SECRET_KEY` | ✅ | Flask secret key — `openssl rand -hex 32` |
 | `DEBUG` | ○ | `false` untuk production |
 | `SESSION_COOKIE_SECURE` | ○ | `true` di production (HTTPS via cloudflared/tailscale) |
 | `SCHEDULER_ENABLED` | ○ | Default `true`; `false` untuk mematikan auto-archive |
 
-Generate bcrypt hash:
-```bash
-python3 -c "import bcrypt; print(bcrypt.hashpw(b'password_anda', bcrypt.gensalt()).decode())"
-```
-
-> ⚠️ **Docker + bcrypt hash**: `$` di env_file di-interpolasi docker compose — hash `$2b$12$abc...`
-> wajib ditulis `$$2b$$12$$abc...`, atau seed interaktif:
-> `docker compose -f docker-compose.prod.yml exec -it app flask create-user -p "password-anda"`
+> Tidak ada seed user dari env — akun pertama dibuat lewat halaman setup awal
+> di browser (`/auth/setup`, aktif hanya saat tabel `users` kosong).
 
 ## 📊 Database Schema
 
@@ -238,8 +226,8 @@ cp .env.production.example .env.production && $EDITOR .env.production && chmod 6
 # 2. Naikkan stack (entrypoint: wait-for-DB → alembic upgrade → gunicorn)
 docker compose -f docker-compose.prod.yml up -d --build
 
-# 3. Seed user awal (interaktif — tanpa menyimpan password di env)
-docker compose -f docker-compose.prod.yml exec -it app flask create-user -p "password-anda"
+# 3. Setup awal — buka http://<server>:5000 di browser, buat akun pertama
+#    (halaman "Buat Akun" muncul otomatis; hanya sekali, setelah itu 404)
 
 # 4. Verifikasi
 curl -s http://localhost:5000/health

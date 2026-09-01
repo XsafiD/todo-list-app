@@ -3,6 +3,12 @@
 > **Tanggal**: 2026-08-29
 > **Status**: Hasil riset & rekomendasi (pre-implementasi Phase 5)
 > **Referensi rule**: `docs/coding-standards/coding-rules/18-deployment.md`
+>
+> ⚠️ **Update 2026-08-31**: mekanisme seed user (`flask create-user` / env
+> `APP_USERNAME`/`APP_PASSWORD`/`APP_PASSWORD_HASH`) **sudah dihapus**. Akun
+> pertama sekarang dibuat via halaman setup awal di browser (`/auth/setup`,
+> aktif hanya saat tabel `users` kosong, setelah itu 404 permanen). Bagian di
+> bawah yang menyebut seed/create-user berlaku untuk versi sebelum update.
 
 ---
 
@@ -199,9 +205,9 @@ MYSQL_ROOT_PASSWORD=<root-password-kuat-random>
 SECRET_KEY=<openssl rand -hex 32>
 DEBUG=false
 
-# Auth seed (flask create-user)
-APP_USERNAME=admin
-APP_PASSWORD_HASH=<bcrypt hash — generate sekali, taruh literal, bukan $(...)>
+# Auth seed (flask create-user) — OBSOLETE 2026-08-31: akun pertama sekarang dibuat via browser (/auth/setup)
+# APP_USERNAME=admin
+# APP_PASSWORD_HASH=<bcrypt hash — generate sekali, taruh literal, bukan $(...)>
 
 # Hardening session
 SESSION_COOKIE_SECURE=true
@@ -322,15 +328,16 @@ openssl rand -hex 32   # isi SECRET_KEY
 # 3. Naikkan stack
 docker compose -f docker-compose.prod.yml up -d --build
 
-# 4. Migrasi + seed user
-docker compose -f docker-compose.prod.yml exec app alembic upgrade head
-docker compose -f docker-compose.prod.yml exec app flask create-user
+# 4. Migrasi (alembic sudah jalan otomatis di entrypoint; ini opsional / cek)
+docker compose -f docker-compose.prod.yml exec app alembic current
 
-# 5. Expose
+# 5. Setup awal — buka browser http://<server>:5000 (sebelum expose ke publik), buat akun pertama (hanya sekali)
+
+# 6. Expose
 #    a. cloudflared ingress (§5.6) lalu restart cloudflared
 #    b. tailscale serve --bg http://localhost:5000   (§5.7)
 
-# 6. Verifikasi
+# 7. Verifikasi
 curl -s http://localhost:5000/health
 # → login via domain, buat project + task, cek scheduler:
 docker compose -f docker-compose.prod.yml logs app | grep -i scheduler
@@ -429,7 +436,7 @@ Mengacu rule 18 (WAJIB/DILARANG) + rule 16:
 
 - [ ] `DEBUG=false`, tidak ada `flask run`/reloader di production
 - [ ] `SECRET_KEY` hasil `openssl rand -hex 32`, hanya di `.env.production` (chmod 600, gitignored ✅ sudah)
-- [ ] Password seed pakai `APP_PASSWORD_HASH` (bcrypt literal), bukan plain
+- [ ] Akun pertama dibuat via setup awal browser — tidak ada password/hash di env (update 2026-08-31)
 - [ ] Container non-root user ✅ (di Dockerfile §5.1)
 - [ ] MySQL tanpa published port; kredensial kuat, tidak di git
 - [ ] `SESSION_COOKIE_SECURE=true` (HTTPS sudah pasti di kedua jalur akses)

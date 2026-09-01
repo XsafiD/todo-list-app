@@ -1,8 +1,10 @@
 """Konfigurasi aplikasi Flask — env-based, satu class untuk semua environment.
 
 Env vars:
-    SECRET_KEY, DEBUG, DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASS,
-    APP_USERNAME, APP_PASSWORD (default seed user via `flask create-user`)
+    SECRET_KEY, DEBUG, DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASS
+
+Akun pertama dibuat via setup awal di browser (/auth/setup) saat tabel
+users masih kosong — tidak ada seed user dari env.
 """
 import os
 from datetime import timedelta
@@ -39,13 +41,6 @@ class Config:
     # HTTPS-only cookie — aktif via env di production (cloudflared/tailscale serve)
     SESSION_COOKIE_SECURE = _bool(os.environ.get("SESSION_COOKIE_SECURE"), default="false")
     PERMANENT_SESSION_LIFETIME = timedelta(days=1)
-
-    # Seed user default (dipakai `flask create-user` bila tanpa argumen).
-    # APP_PASSWORD_HASH (bcrypt literal) diutamakan — password plain tidak
-    # tersimpan di env production.
-    APP_USERNAME = os.environ.get("APP_USERNAME", "admin")
-    APP_PASSWORD = os.environ.get("APP_PASSWORD", "changeme")
-    APP_PASSWORD_HASH = os.environ.get("APP_PASSWORD_HASH")
 
     # Background scheduler (arsip otomatis) — off di test, env-overridable
     SCHEDULER_ENABLED = _bool(os.environ.get("SCHEDULER_ENABLED"), default="true")

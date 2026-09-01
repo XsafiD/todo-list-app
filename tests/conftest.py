@@ -13,8 +13,6 @@ class TestConfig:
     SQLALCHEMY_ENGINE_OPTIONS = {}
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     WTF_CSRF_ENABLED = False
-    APP_USERNAME = "admin"
-    APP_PASSWORD = "test-password"
     SCHEDULER_ENABLED = False
 
 
@@ -44,3 +42,19 @@ def login_user(client):
     with client.session_transaction() as sess:
         sess["user_id"] = 1
         sess["username"] = "tester"
+
+
+@pytest.fixture
+def bare_app():
+    """App TANPA user — untuk skenario setup awal (first-run)."""
+    application = create_app(TestConfig)
+    with application.app_context():
+        db.create_all()
+        yield application
+        db.session.remove()
+        db.drop_all()
+
+
+@pytest.fixture
+def bare_client(bare_app):
+    return bare_app.test_client()

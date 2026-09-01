@@ -1,4 +1,4 @@
-.PHONY: help dev migrate-up migrate-down migrate-revision seed-user mysql-up mysql-down mysql-ps mysql-shell mysql-logs
+.PHONY: help dev migrate-up migrate-down migrate-revision mysql-up mysql-down mysql-ps mysql-shell mysql-logs
 
 help: ## Show all commands
 	@echo "Available commands:"
@@ -15,9 +15,6 @@ migrate-down: ## Rollback latest migration
 
 migrate-revision: ## Create new migration file (MESSAGE="...")
 	.venv/bin/alembic revision --autogenerate -m "$(MESSAGE)"
-
-seed-user: ## Create/reset seed user (default dari .env)
-	.venv/bin/flask create-user
 
 mysql-up: ## Start MySQL container (Docker hanya untuk MySQL di fase ini)
 	docker compose up -d mysql
