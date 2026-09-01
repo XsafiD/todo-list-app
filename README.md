@@ -73,11 +73,11 @@ dashboardku/
 │   ├── extensions.py            # db, csrf instances
 │   ├── models.py                # ORM models (User, Project, Task, Reminder, NotificationLog)
 │   ├── controllers/             # Blueprint per domain
-│   │   ├── auth_controller.py   # auth_bp: login, logout
+│   │   ├── auth_controller.py   # auth_bp: setup awal, login, logout
 │   │   ├── project_controller.py# project_bp: CRUD + archive + dashboard
 │   │   └── task_controller.py   # task_bp: CRUD + complete toggle
 │   ├── services/                # Business Layer
-│   │   ├── auth_service.py      # verify_credentials, session management
+│   │   ├── auth_service.py      # verify_login, has_any_user, create_first_user
 │   │   ├── project_service.py   # CRUD + archive
 │   │   └── task_service.py      # CRUD + toggle + day_h sync
 │   ├── forms/                   # WTForms
