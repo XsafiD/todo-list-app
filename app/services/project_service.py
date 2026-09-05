@@ -30,9 +30,10 @@ class ProjectView:
     total_tasks: int
     active_tasks: int
     done_tasks: int
+    archived_tasks: int
 
 
-def _to_view(project: Project, total: int, active: int) -> ProjectView:
+def _to_view(project: Project, total: int, active: int, archived_tasks: int) -> ProjectView:
     icon = (project.icon or "").strip().removeprefix("fa-") or _DEFAULT_ICON
     return ProjectView(
         id=project.id,
@@ -43,12 +44,18 @@ def _to_view(project: Project, total: int, active: int) -> ProjectView:
         created_at=project.created_at,
         total_tasks=total,
         active_tasks=active,
-        done_tasks=total - active,
+        # done = selesai belum diarsip; archived ⊆ done → total = active + done + archived
+        done_tasks=total - active - archived_tasks,
+        archived_tasks=archived_tasks,
     )
 
 
 def _counts_stmt():
-    """Query aggregate project + jumlah task (1 query untuk semua project — anti N+1)."""
+    """Query aggregate project + jumlah task (1 query untuk semua project — anti N+1).
+
+    Kolom: (Project, total, active, archived) — archived = task terarsip
+    (subset dari done; invariant state machine: terarsip selalu done).
+    """
     return (
         select(
             Project,
@@ -56,6 +63,9 @@ def _counts_stmt():
             func.coalesce(
                 func.sum(case((Task.status != TaskStatus.DONE, 1), else_=0)), 0
             ).label("active"),
+            func.coalesce(
+                func.sum(case((Task.archived_at.is_not(None), 1), else_=0)), 0
+            ).label("archived"),
         )
         .outerjoin(Task, Task.project_id == Project.id)
         .group_by(Project.id)
@@ -71,15 +81,15 @@ class ProjectService:
         stmt = _counts_stmt()
         if not include_archived:
             stmt = stmt.where(Project.archived.is_(False))
-        return [_to_view(p, total, int(active)) for p, total, active in db.session.execute(stmt)]
+        return [_to_view(p, total, int(active), int(archived)) for p, total, active, archived in db.session.execute(stmt)]
 
     def get_by_id(self, project_id: int) -> ProjectView | None:
         stmt = _counts_stmt().where(Project.id == project_id)
         row = db.session.execute(stmt).first()
         if row is None:
             return None
-        project, total, active = row
-        return _to_view(project, total, int(active))
+        project, total, active, archived = row
+        return _to_view(project, total, int(active), int(archived))
 
     def count_all(self) -> tuple[int, int]:
         """Return (total_project, project_aktif) dalam satu query."""

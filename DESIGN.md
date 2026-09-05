@@ -221,6 +221,22 @@ The system runs predominantly flat. Elevation is reserved for two interaction la
 **`task-item-overdue`** — Overdue task state.
 - Left border `4px solid {colors.critical}`.
 
+### Task Table
+
+**`table-task`** — Task list as table (project detail, section "Tugas").
+- Container: `{colors.surface}`, rounded `{rounded.lg}`, border `1px solid {colors.hairline}`, horizontal scroll wrapper.
+- Header: uppercase, `{typography.caption}` (12px, semibold), text `{colors.steel}`, bottom border `1px solid {colors.hairline}`.
+- Columns: ✓ toggle | Judul (link) | Prioritas | Status | Deadline | Aksi.
+- Row: min padding 12px, bottom border `1px solid {colors.hairline-soft}` (last row none), hover background `{colors.surface-soft}`.
+- Mobile (<768px): kolom Prioritas & Status disembunyikan — cukup ✓, Judul, Deadline, Aksi.
+- Row actions: "Arsipkan" hanya untuk task `done`.
+
+**`table-task-archived`** — Archived task table (project detail, section "Arsip", collapsed `<details>`).
+- Columns: Judul (link, strikethrough `{colors.stone}`) | Selesai | Diarsipkan | Aksi.
+- Mobile (<768px): kolom Selesai disembunyikan.
+- Row actions: "Buka Kembali" (unarchive) + "Hapus" (via modal konfirmasi dinamis).
+- Summary header: judul section + counter badge (`{colors.surface-soft}`, `{rounded.full}`) + chevron yang berputar saat terbuka.
+
 ### Navigation
 
 **`top-nav`** — Sticky header with logo, search, user menu.

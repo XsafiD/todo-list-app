@@ -1,0 +1,117 @@
+{# components/table.html — macro tabel task (detail project): Tugas aktif & Arsip #}
+{% from "components/badge.html" import deadline_badge, priority_badge, status_badge %}
+
+{%- set _TH = "px-4 py-3 text-[12px] font-semibold uppercase tracking-wide text-steel" -%}
+{%- set _TD = "px-4 py-3 align-middle" -%}
+{%- set _ROW = "border-b border-hairline-soft last:border-b-0 transition-colors hover:bg-surface-soft/60" -%}
+{%- set _ACTION_BTN = "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-[12px] font-medium text-slate transition hover:bg-surface-soft" -%}
+
+{#- Tabel tugas AKTIF — quick-toggle ✓ tetap wired via task.js (hook data-task-item di <tr>). -#}
+{% macro task_table(tasks, next_url=None) -%}
+<div class="overflow-x-auto rounded-lg border border-hairline bg-surface">
+  <table class="w-full text-left">
+    <thead>
+      <tr class="border-b border-hairline">
+        <th scope="col" class="{{ _TH }}"><span class="sr-only">Tandai selesai</span></th>
+        <th scope="col" class="{{ _TH }}">Judul</th>
+        <th scope="col" class="{{ _TH }} hidden md:table-cell">Prioritas</th>
+        <th scope="col" class="{{ _TH }} hidden md:table-cell">Status</th>
+        <th scope="col" class="{{ _TH }}">Deadline</th>
+        <th scope="col" class="{{ _TH }}"><span class="sr-only">Aksi</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for task in tasks %}
+      <tr data-task-item data-task-id="{{ task.id }}" data-status="{{ task.status }}"
+          class="{{ _ROW }} {% if task.status == 'done' %}is-done{% endif %}">
+        <td class="{{ _TD }} w-12">
+          <form method="post" action="{{ url_for('task.complete', task_id=task.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            {% if next_url %}<input type="hidden" name="next" value="{{ next_url }}">{% endif %}
+            <button type="submit" data-task-toggle
+                    class="text-[20px] leading-none transition-transform active:scale-110"
+                    aria-label="{{ 'Buka kembali tugas' if task.status == 'done' else 'Tandai selesai' }} {{ task.title }}">
+              <i data-task-toggle-icon
+                 class="{{ 'fa-solid' if task.status == 'done' else 'fa-regular' }} fa-circle-check" aria-hidden="true"></i>
+            </button>
+          </form>
+        </td>
+        <td class="{{ _TD }} min-w-0">
+          <a href="{{ url_for('task.detail', task_id=task.id) }}" data-task-title
+             class="block max-w-[280px] truncate font-medium text-ink-deep transition hover:text-primary md:max-w-none"
+             title="{{ task.title }}">{{ task.title }}</a>
+        </td>
+        <td class="{{ _TD }} hidden md:table-cell">{{ priority_badge(task.priority) }}</td>
+        <td class="{{ _TD }} hidden md:table-cell"><span data-task-status-badge>{{ status_badge(task.status) }}</span></td>
+        <td class="{{ _TD }}">
+          {% if task.deadline %}{{ deadline_badge(task.deadline_state, task.deadline_label) }}
+          {% else %}<span class="text-[14px] text-slate">—</span>{% endif %}
+        </td>
+        <td class="{{ _TD }} text-right">
+          {% if task.status == 'done' %}
+          <form method="post" action="{{ url_for('task.archive', task_id=task.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            {% if next_url %}<input type="hidden" name="next" value="{{ next_url }}">{% endif %}
+            <button type="submit" class="{{ _ACTION_BTN }} hover:text-success"
+                    aria-label="Arsipkan tugas {{ task.title }}">
+              <i class="fa-solid fa-box-archive text-[12px]" aria-hidden="true"></i><span class="hidden md:inline">Arsipkan</span>
+            </button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{%- endmacro %}
+
+{#- Tabel tugas TERARSIP — tanpa toggle (state terkunci done); aksi unarchive + hapus permanen.
+    Tombol hapus hanya PEMICU modal (data-confirm-*) — modal render terpisah di page (confirm_modal_dynamic). -#}
+{% macro archived_task_table(tasks, back_url=None, modal_id="modal-delete-archived-task") -%}
+<div class="overflow-x-auto rounded-lg border border-hairline bg-surface">
+  <table class="w-full text-left">
+    <thead>
+      <tr class="border-b border-hairline">
+        <th scope="col" class="{{ _TH }}">Judul</th>
+        <th scope="col" class="{{ _TH }} hidden md:table-cell">Selesai</th>
+        <th scope="col" class="{{ _TH }}">Diarsipkan</th>
+        <th scope="col" class="{{ _TH }}"><span class="sr-only">Aksi</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for task in tasks %}
+      <tr class="{{ _ROW }}">
+        <td class="{{ _TD }} min-w-0">
+          <a href="{{ url_for('task.detail', task_id=task.id) }}"
+             class="block max-w-[280px] truncate font-medium text-stone line-through transition hover:text-primary md:max-w-none"
+             title="{{ task.title }}">{{ task.title }}</a>
+        </td>
+        <td class="{{ _TD }} hidden text-[14px] text-slate md:table-cell">{{ task.completed_at | fmt_date }}</td>
+        <td class="{{ _TD }} text-[14px] text-slate">{{ task.archived_at | fmt_date }}</td>
+        <td class="{{ _TD }}">
+          <div class="flex items-center justify-end gap-1">
+            <form method="post" action="{{ url_for('task.unarchive', task_id=task.id) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              {% if back_url %}<input type="hidden" name="next" value="{{ back_url }}">{% endif %}
+              <button type="submit" class="{{ _ACTION_BTN }} hover:text-success"
+                      aria-label="Keluarkan tugas {{ task.title }} dari arsip">
+                <i class="fa-solid fa-rotate-left text-[12px]" aria-hidden="true"></i><span class="hidden md:inline">Buka Kembali</span>
+              </button>
+            </form>
+            <button type="button" data-modal-target="{{ modal_id }}" aria-haspopup="dialog"
+                    data-confirm-action="{{ url_for('task.delete', task_id=task.id) }}"
+                    data-confirm-title="Hapus tugas permanen?"
+                    data-confirm-message="Tugas '{{ task.title }}' akan dihapus permanen dan tidak bisa dikembalikan."
+                    class="{{ _ACTION_BTN }} hover:text-critical"
+                    aria-label="Hapus tugas {{ task.title }} permanen">
+              <i class="fa-solid fa-trash text-[12px]" aria-hidden="true"></i><span class="hidden md:inline">Hapus</span>
+            </button>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{%- endmacro %}

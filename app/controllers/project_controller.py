@@ -53,8 +53,12 @@ def detail(project_id: int):
     project = project_service.get_by_id(project_id)
     if project is None:
         abort(404)
-    tasks = task_service.get_all(filters={"project_id": project_id})
-    return render_template("project/detail.html", project=project, tasks=tasks)
+    filters = {"project_id": project_id}
+    tasks = task_service.get_all(filters=filters)
+    archived_tasks = task_service.get_archived(filters=filters)
+    return render_template(
+        "project/detail.html", project=project, tasks=tasks, archived_tasks=archived_tasks
+    )
 
 
 @project_bp.route("/<int:project_id>/edit", methods=["GET", "POST"])

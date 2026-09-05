@@ -62,6 +62,19 @@ class TestProjectCounts:
         assert view.total_tasks == 2
         assert view.done_tasks == 1
         assert view.active_tasks == 1
+        assert view.archived_tasks == 0
+
+    def test_counts_dengan_arsip(self, sample_project):
+        """Task terarsip masuk hitungan Arsip dan KELUAR dari Selesai (saling lepas)."""
+        done = task_service.create(title="T1", project_id=sample_project.id, status="done")
+        task_service.archive(done.id)
+        task_service.create(title="T2", project_id=sample_project.id)
+        view = project_service.get_by_id(sample_project.id)
+        assert view is not None
+        assert view.total_tasks == 2
+        assert view.active_tasks == 1
+        assert view.done_tasks == 0
+        assert view.archived_tasks == 1
 
     def test_count_all_project(self, sample_project):
         other = project_service.create(name="Arsip", color="#111111")
@@ -81,6 +94,17 @@ class TestProjectRoutes:
 
     def test_detail_404_bila_tidak_ada(self, client, login_user):
         assert client.get("/projects/999").status_code == 404
+
+    def test_detail_tampilkan_tugas_dan_arsip(self, client, login_user, sample_project):
+        """Section Tugas berisi task aktif; section Arsip berisi task terarsip."""
+        done = task_service.create(title="Tugas Lama", project_id=sample_project.id, status="done")
+        task_service.archive(done.id)
+        task_service.create(title="Tugas Aktif", project_id=sample_project.id)
+        response = client.get(f"/projects/{sample_project.id}")
+        assert response.status_code == 200
+        assert b"Tugas Aktif" in response.data
+        assert b"Tugas Lama" in response.data
+        assert b"Arsip" in response.data
 
     def test_create_via_post_persist_dan_redirect(self, client, login_user):
         response = client.post(
