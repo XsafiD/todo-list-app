@@ -9,7 +9,7 @@
 {% block authenticated_content %}
 {{ page_path([
      {"label": "Project", "href": url_for("project.index")},
-     {"label": project.name, "href": url_for("project.detail", project_id=project.id)},
+     {"label": project.name, "href": url_for("project.detail", project_id=project.public_id)},
      {"label": "Edit"},
    ]) }}
 
@@ -27,7 +27,7 @@
     </p>
     <div class="flex items-center gap-3 pt-2">
       {{ submit_button("Simpan Perubahan", icon="fa-check") }}
-      {{ cancel_link(url_for("project.detail", project_id=project.id)) }}
+      {{ cancel_link(url_for("project.detail", project_id=project.public_id)) }}
     </div>
   </form>
 </div>

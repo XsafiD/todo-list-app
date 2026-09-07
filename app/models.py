@@ -8,10 +8,26 @@ migrasi Flask.
 """
 from __future__ import annotations
 
+import secrets
+import string
 from datetime import datetime, timezone
 from enum import Enum
 
 import bcrypt
+
+_BASE62 = string.ascii_letters + string.digits
+
+
+def generate_public_id(length: int = 12) -> str:
+    """Generate random base62 string for public identifier.
+
+    Args:
+        length: Number of characters (default 12, ~71 bits entropy).
+
+    Returns:
+        Random string like 'Xk9fQ2mBv7Ld'.
+    """
+    return "".join(secrets.choice(_BASE62) for _ in range(length))
 from sqlalchemy import (
     Boolean,
     DateTime,
@@ -97,9 +113,13 @@ class Project(db.Model):
     """Entity — wadah pengelompokan task."""
 
     __tablename__ = "projects"
-    __table_args__ = (Index("idx_projects_name", "name"),)
+    __table_args__ = (
+        Index("idx_projects_name", "name"),
+        Index("idx_projects_public_id", "public_id", unique=True),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    public_id: Mapped[str] = mapped_column(String(16), unique=True, nullable=False, default=generate_public_id)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     color: Mapped[str] = mapped_column(String(7), default="#3B82F6", nullable=False)
     icon: Mapped[str | None] = mapped_column(String(50), nullable=True)
@@ -117,9 +137,11 @@ class Task(db.Model):
         Index("idx_tasks_project_id", "project_id"),
         Index("idx_tasks_deadline", "deadline"),
         Index("idx_tasks_status", "status"),
+        Index("idx_tasks_public_id", "public_id", unique=True),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    public_id: Mapped[str] = mapped_column(String(16), unique=True, nullable=False, default=generate_public_id)
     project_id: Mapped[int | None] = mapped_column(
         Integer, ForeignKey("projects.id", ondelete="SET NULL"), nullable=True
     )

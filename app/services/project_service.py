@@ -22,6 +22,7 @@ _DEFAULT_ICON = "folder"
 class ProjectView:
     """DTO tampilan project — field display precomputed di service."""
     id: int
+    public_id: str
     name: str
     color: str
     icon: str  # nama ikon Font Awesome tanpa prefix, mis. "briefcase"
@@ -37,6 +38,7 @@ def _to_view(project: Project, total: int, active: int, archived_tasks: int) -> 
     icon = (project.icon or "").strip().removeprefix("fa-") or _DEFAULT_ICON
     return ProjectView(
         id=project.id,
+        public_id=project.public_id,
         name=project.name,
         color=project.color,
         icon=icon,
@@ -44,7 +46,6 @@ def _to_view(project: Project, total: int, active: int, archived_tasks: int) -> 
         created_at=project.created_at,
         total_tasks=total,
         active_tasks=active,
-        # done = selesai belum diarsip; archived ⊆ done → total = active + done + archived
         done_tasks=total - active - archived_tasks,
         archived_tasks=archived_tasks,
     )
@@ -85,6 +86,14 @@ class ProjectService:
 
     def get_by_id(self, project_id: int) -> ProjectView | None:
         stmt = _counts_stmt().where(Project.id == project_id)
+        row = db.session.execute(stmt).first()
+        if row is None:
+            return None
+        project, total, active, archived = row
+        return _to_view(project, total, int(active), int(archived))
+
+    def get_by_public_id(self, public_id: str) -> ProjectView | None:
+        stmt = _counts_stmt().where(Project.public_id == public_id)
         row = db.session.execute(stmt).first()
         if row is None:
             return None

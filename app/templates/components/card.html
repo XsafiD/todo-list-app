@@ -2,7 +2,7 @@
 {% from "components/badge.html" import deadline_badge, priority_badge, project_tag, status_badge %}
 
 {% macro project_card(project) -%}
-<a href="{{ url_for('project.detail', project_id=project.id) }}"
+<a href="{{ url_for('project.detail', project_id=project.public_id) }}"
    class="group block rounded-lg border border-hairline bg-surface p-5 transition-all duration-150 hover:-translate-y-0.5 hover:shadow-md">
   <div class="flex items-start justify-between">
     <span class="flex h-10 w-10 items-center justify-center rounded-lg text-white"
@@ -29,7 +29,7 @@
      class="flex items-center gap-3 rounded-lg border border-hairline bg-surface p-4 min-h-[56px] transition-shadow duration-150 hover:shadow-sm
             {% if task.status == 'done' %}is-done{% endif %}
             {% if task.deadline_state == 'overdue' %}border-l-4 border-l-critical{% endif %}">
-  <form method="post" action="{{ url_for('task.complete', task_id=task.id) }}" class="shrink-0">
+  <form method="post" action="{{ url_for('task.complete', task_id=task.public_id) }}" class="shrink-0">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     {% if next_url %}<input type="hidden" name="next" value="{{ next_url }}">{% endif %}
     <button type="submit" data-task-toggle
@@ -40,7 +40,7 @@
     </button>
   </form>
 
-  <a href="{{ url_for('task.detail', task_id=task.id) }}" class="min-w-0 flex-1">
+  <a href="{{ url_for('task.detail', task_id=task.public_id) }}" class="min-w-0 flex-1">
     <p data-task-title class="truncate text-[16px] font-medium {% if task.status == 'done' %}text-stone line-through{% else %}text-ink-deep{% endif %}">
       {{ task.title }}
     </p>

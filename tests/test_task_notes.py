@@ -68,25 +68,25 @@ class TestNoteRoutes:
     """TC: route timeline — POST add/delete + render detail (login wajib)."""
 
     def test_tanpa_login_redirect(self, client, sample_task):
-        resp = client.post(f"/tasks/{sample_task.id}/notes", data={"content": "x"})
+        resp = client.post(f"/tasks/{sample_task.public_id}/notes", data={"content": "x"})
         assert resp.status_code == 302
         assert "/login" in resp.headers["Location"]
 
     def test_detail_menampilkan_timeline(self, client, login_user, sample_task):
         note_service.add_note(sample_task.id, "Draft awal selesai")
-        resp = client.get(f"/tasks/{sample_task.id}")
+        resp = client.get(f"/tasks/{sample_task.public_id}")
         assert resp.status_code == 200
         assert b"Timeline Proses" in resp.data
         assert b"Draft awal selesai" in resp.data
         assert b"Belum ada catatan" not in resp.data
 
     def test_detail_kosong_empty_state(self, client, login_user, sample_task):
-        resp = client.get(f"/tasks/{sample_task.id}")
+        resp = client.get(f"/tasks/{sample_task.public_id}")
         assert b"Belum ada catatan" in resp.data
 
     def test_add_berhasil_redirect_dan_render(self, client, login_user, sample_task):
         resp = client.post(
-            f"/tasks/{sample_task.id}/notes",
+            f"/tasks/{sample_task.public_id}/notes",
             data={"content": "Mulai riset"},
             follow_redirects=True,
         )
@@ -95,7 +95,7 @@ class TestNoteRoutes:
 
     def test_add_kosong_flash_error(self, client, login_user, sample_task):
         resp = client.post(
-            f"/tasks/{sample_task.id}/notes",
+            f"/tasks/{sample_task.public_id}/notes",
             data={"content": "  "},
             follow_redirects=True,
         )
@@ -103,7 +103,7 @@ class TestNoteRoutes:
 
     def test_add_task_terarsip_flash_error(self, client, login_user, archived_task):
         resp = client.post(
-            f"/tasks/{archived_task.id}/notes",
+            f"/tasks/{archived_task.public_id}/notes",
             data={"content": "x"},
             follow_redirects=True,
         )
@@ -112,7 +112,7 @@ class TestNoteRoutes:
     def test_delete_berhasil(self, client, login_user, sample_task):
         note = note_service.add_note(sample_task.id, "Sementara")
         resp = client.post(
-            f"/tasks/{sample_task.id}/notes/{note.id}/delete",
+            f"/tasks/{sample_task.public_id}/notes/{note.id}/delete",
             follow_redirects=True,
         )
         assert resp.status_code == 200
@@ -121,5 +121,5 @@ class TestNoteRoutes:
     def test_delete_note_task_lain_404(self, client, login_user, sample_task):
         other = task_service.create(title="Task lain")
         note = note_service.add_note(sample_task.id, "Milik task pertama")
-        resp = client.post(f"/tasks/{other.id}/notes/{note.id}/delete")
+        resp = client.post(f"/tasks/{other.public_id}/notes/{note.id}/delete")
         assert resp.status_code == 404

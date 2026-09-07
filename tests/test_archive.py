@@ -124,22 +124,22 @@ class TestArchiveRoutes:
         assert "Tidak ada arsip" in body
 
     def test_archive_post_prg_dari_kanban(self, client, login_user, done_task):
-        response = client.post(f"/tasks/{done_task.id}/archive", follow_redirects=False)
+        response = client.post(f"/tasks/{done_task.public_id}/archive", follow_redirects=False)
         assert response.status_code == 302
         assert "/tasks/kanban" in response.headers["Location"]
         assert db.session.get(Task, done_task.id).archived_at is not None
 
     def test_archive_post_task_aktif_flash_error(self, client, login_user):
         task = task_service.create(title="Masih jalan")
-        response = client.post(f"/tasks/{task.id}/archive", follow_redirects=True)
+        response = client.post(f"/tasks/{task.public_id}/archive", follow_redirects=True)
         assert response.status_code == 200
         assert db.session.get(Task, task.id).archived_at is None
 
     def test_archive_post_404(self, client, login_user):
-        assert client.post("/tasks/999/archive").status_code == 404
+        assert client.post("/tasks/NonexistentId123/archive").status_code == 404
 
     def test_unarchive_post_prg_kembali_ke_arsip(self, client, login_user, archived_task):
-        response = client.post(f"/tasks/{archived_task.id}/unarchive", follow_redirects=False)
+        response = client.post(f"/tasks/{archived_task.public_id}/unarchive", follow_redirects=False)
         assert response.status_code == 302
         assert "/arsip/" in response.headers["Location"]
         row = db.session.get(Task, archived_task.id)
@@ -147,12 +147,12 @@ class TestArchiveRoutes:
         assert row.status.value == "done"
 
     def test_unarchive_post_404(self, client, login_user):
-        assert client.post("/tasks/999/unarchive").status_code == 404
+        assert client.post("/tasks/NonexistentId123/unarchive").status_code == 404
 
     def test_delete_dari_arsip_next_kembali_ke_arsip(self, client, login_user, archived_task):
         task_id = archived_task.id
         response = client.post(
-            f"/tasks/{task_id}/delete", data={"next": "/arsip/"}, follow_redirects=False
+            f"/tasks/{archived_task.public_id}/delete", data={"next": "/arsip/"}, follow_redirects=False
         )
         assert response.status_code == 302
         assert "/arsip/" in response.headers["Location"]
@@ -162,7 +162,7 @@ class TestArchiveRoutes:
         """Anti open redirect — next absolut tidak dipakai (16-security.md)."""
         task_id = done_task.id
         response = client.post(
-            f"/tasks/{task_id}/delete",
+            f"/tasks/{done_task.public_id}/delete",
             data={"next": "https://evil.example.com/"},
             follow_redirects=False,
         )

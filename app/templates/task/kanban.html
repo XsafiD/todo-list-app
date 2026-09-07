@@ -61,12 +61,12 @@
       <div data-kanban-cards class="flex min-h-[120px] flex-col gap-3 p-3">
         {% for task in grouped[key] %}
         <article data-kanban-card data-task-id="{{ task.id }}"
-                 data-status-url="{{ url_for('task.update_status', task_id=task.id) }}"
+                 data-status-url="{{ url_for('task.update_status', task_id=task.public_id) }}"
                  class="rounded-lg border border-hairline bg-surface p-4
                         {% if task.status == 'done' %}is-done{% endif %}
                         {% if task.deadline_state == 'overdue' %}border-l-4 border-l-critical{% endif %}">
           <div class="flex items-start justify-between gap-2">
-            <a href="{{ url_for('task.detail', task_id=task.id) }}" class="min-w-0 flex-1" title="{{ task.title }}">
+            <a href="{{ url_for('task.detail', task_id=task.public_id) }}" class="min-w-0 flex-1" title="{{ task.title }}">
               <p data-kanban-title class="line-clamp-2 text-[14px] font-medium text-ink-deep">{{ task.title }}</p>
             </a>
             {{ priority_badge(task.priority) }}
@@ -92,7 +92,7 @@
               </button>
               {% if task.status == 'done' %}
               <button type="button" data-modal-target="modal-archive-task" aria-haspopup="dialog"
-                      data-confirm-action="{{ url_for('task.archive', task_id=task.id) }}"
+                      data-confirm-action="{{ url_for('task.archive', task_id=task.public_id) }}"
                       data-confirm-title="Arsipkan tugas?"
                       data-confirm-message="Tugas '{{ task.title }}' akan dipindahkan ke Arsip. Kamu bisa mengeluarkannya kembali dari halaman Arsip."
                       class="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[12px] font-medium text-slate transition hover:bg-surface-soft hover:text-warning"

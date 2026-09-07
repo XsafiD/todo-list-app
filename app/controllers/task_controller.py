@@ -36,8 +36,8 @@ KANBAN_COLUMNS = [
 ]
 
 
-def _get_task_or_404(task_id: int):
-    task = task_service.get_by_id(task_id)
+def _get_task_or_404(public_id: str):
+    task = task_service.get_by_public_id(public_id)
     if task is None:
         abort(404)
     return task
@@ -109,85 +109,87 @@ def create():
     return render_template("task/create.html", form=form)
 
 
-@task_bp.route("/<int:task_id>")
+@task_bp.route("/<string:task_id>")
 @login_required
-def detail(task_id: int):
+def detail(task_id: str):
     task = _get_task_or_404(task_id)
     return render_template(
         "task/detail.html",
         task=task,
-        notes=note_service.get_for_task(task_id),
+        notes=note_service.get_for_task(task.id),
         note_form=NoteForm(),
     )
 
 
-@task_bp.route("/<int:task_id>/edit", methods=["GET", "POST"])
+@task_bp.route("/<string:task_id>/edit", methods=["GET", "POST"])
 @login_required
-def edit(task_id: int):
+def edit(task_id: str):
     task = _get_task_or_404(task_id)
     form = TaskForm(obj=task)
     form.project_id.choices = project_choices()
-    # Prefill eksplisit: DTO sudah string, tapi select butuh nilai pasti (bukan enum/int)
     form.priority.data = task.priority
     form.status.data = task.status
     form.project_id.data = str(task.project_id) if task.project_id else ""
 
     if form.validate_on_submit():
         try:
-            task_service.update(task_id, **_form_payload(form))
+            task_service.update(task.id, **_form_payload(form))
             flash(f"Tugas '{task.title}' berhasil diperbarui.", "success")
-            return redirect(url_for("task.detail", task_id=task_id))
+            return redirect(url_for("task.detail", task_id=task.public_id))
         except ValueError as err:
             flash(str(err), "error")
     return render_template("task/edit.html", form=form, task=task)
 
 
-@task_bp.route("/<int:task_id>/complete", methods=["POST"])
+@task_bp.route("/<string:task_id>/complete", methods=["POST"])
 @login_required
-def complete(task_id: int):
+def complete(task_id: str):
+    task = _get_task_or_404(task_id)
     try:
-        task = task_service.toggle_complete(task_id)
+        task_obj = task_service.toggle_complete(task.id)
     except ValueError:
         if _wants_json():
             return jsonify(status="error", error="not_found", message="Tugas tidak ditemukan."), 404
         abort(404)
-    verb = "ditandai selesai" if task.status.value == "done" else "dibuka kembali"
-    message = f"Tugas '{task.title}' {verb}."
+    verb = "ditandai selesai" if task_obj.status.value == "done" else "dibuka kembali"
+    message = f"Tugas '{task_obj.title}' {verb}."
     if _wants_json():
         return jsonify(
             status="ok",
-            data={"id": task.id, "title": task.title, "status": task.status.value},
+            data={"id": task_obj.id, "title": task_obj.title, "status": task_obj.status.value},
             message=message,
         )
     flash(message, "success")
-    return redirect(request.form.get("next") or url_for("task.detail", task_id=task_id))
+    return redirect(request.form.get("next") or url_for("task.detail", task_id=task.public_id))
 
 
-@task_bp.route("/<int:task_id>/notes", methods=["POST"])
+@task_bp.route("/<string:task_id>/notes", methods=["POST"])
 @login_required
-def add_note(task_id: int):
+def add_note(task_id: str):
     """Tambah catatan timeline — task terarsip ditolak di service."""
+    task = _get_task_or_404(task_id)
     form = NoteForm()
     if form.validate_on_submit():
         try:
-            note_service.add_note(task_id, form.content.data)
+            note_service.add_note(task.id, form.content.data)
             flash("Catatan ditambahkan ke timeline.", "success")
         except ValueError as err:
             flash(str(err), "error")
     else:
         flash(form.content.errors[0] if form.content.errors else "Catatan tidak valid.", "error")
-    return redirect(url_for("task.detail", task_id=task_id))
+    return redirect(url_for("task.detail", task_id=task.public_id))
 
 
-@task_bp.route("/<int:task_id>/notes/<int:note_id>/delete", methods=["POST"])
+@task_bp.route("/<string:task_id>/notes/<int:note_id>/delete", methods=["POST"])
 @login_required
-def delete_note(task_id: int, note_id: int):
+def delete_note(task_id: str, note_id: int):
+    task = _get_task_or_404(task_id)
     try:
-        note_service.delete_note(task_id, note_id)
+        note_service.delete_note(task.id, note_id)
     except ValueError:
         abort(404)
     flash("Catatan timeline dihapus.", "success")
-    return redirect(url_for("task.detail", task_id=task_id))
+    return redirect(url_for("task.detail", task_id=task.public_id))
 
 
 @task_bp.route("/kanban")
@@ -200,9 +202,10 @@ def kanban():
     return render_template("task/kanban.html", columns=KANBAN_COLUMNS, grouped=grouped)
 
 
-@task_bp.route("/<int:task_id>/status", methods=["POST"])
+@task_bp.route("/<string:task_id>/status", methods=["POST"])
 @login_required
-def update_status(task_id: int):
+def update_status(task_id: str):
+    task = _get_task_or_404(task_id)
     payload = request.get_json(silent=True) or {}
     status = payload.get("status", "")
     if status not in _ALLOWED_STATUS:
@@ -212,53 +215,54 @@ def update_status(task_id: int):
         flash(message, "error")
         return redirect(url_for("task.kanban"))
     try:
-        task = task_service.update_status(task_id, status)
+        task_obj = task_service.update_status(task.id, status)
     except ValueError:
         if _wants_json():
             return jsonify(status="error", error="not_found", message="Tugas tidak ditemukan."), 404
         abort(404)
-    message = f"Status tugas '{task.title}' diperbarui."
+    message = f"Status tugas '{task_obj.title}' diperbarui."
     if _wants_json():
         return jsonify(
             status="ok",
-            data={"id": task.id, "title": task.title, "status": task.status.value},
+            data={"id": task_obj.id, "title": task_obj.title, "status": task_obj.status.value},
             message=message,
         )
     flash(message, "success")
     return redirect(url_for("task.kanban"))
 
 
-@task_bp.route("/<int:task_id>/archive", methods=["POST"])
+@task_bp.route("/<string:task_id>/archive", methods=["POST"])
 @login_required
-def archive(task_id: int):
-    if task_service.get_by_id(task_id) is None:
-        abort(404)
+def archive(task_id: str):
+    task = _get_task_or_404(task_id)
     try:
-        task = task_service.archive(task_id)
+        task_obj = task_service.archive(task.id)
     except ValueError as err:
         flash(str(err), "error")
         return redirect(url_for("task.kanban"))
-    flash(f"Tugas '{task.title}' dipindahkan ke Arsip.", "success")
+    flash(f"Tugas '{task_obj.title}' dipindahkan ke Arsip.", "success")
     return redirect(_safe_next(url_for("task.kanban")))
 
 
-@task_bp.route("/<int:task_id>/unarchive", methods=["POST"])
+@task_bp.route("/<string:task_id>/unarchive", methods=["POST"])
 @login_required
-def unarchive(task_id: int):
+def unarchive(task_id: str):
+    task = _get_task_or_404(task_id)
     try:
-        task = task_service.unarchive(task_id)
+        task_obj = task_service.unarchive(task.id)
     except ValueError:
         abort(404)
-    flash(f"Tugas '{task.title}' dikeluarkan dari Arsip — kembali ke kolom Selesai.", "success")
+    flash(f"Tugas '{task_obj.title}' dikeluarkan dari Arsip — kembali ke kolom Selesai.", "success")
     return redirect(_safe_next(url_for("archive.index")))
 
 
-@task_bp.route("/<int:task_id>/delete", methods=["POST"])
+@task_bp.route("/<string:task_id>/delete", methods=["POST"])
 @login_required
-def delete(task_id: int):
+def delete(task_id: str):
+    task = _get_task_or_404(task_id)
     try:
-        task = task_service.delete(task_id)
+        task_obj = task_service.delete(task.id)
     except ValueError:
         abort(404)
-    flash(f"Tugas '{task.title}' dihapus.", "success")
+    flash(f"Tugas '{task_obj.title}' dihapus.", "success")
     return redirect(_safe_next(url_for("task.index")))

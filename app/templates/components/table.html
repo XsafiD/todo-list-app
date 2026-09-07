@@ -25,7 +25,7 @@
       <tr data-task-item data-task-id="{{ task.id }}" data-status="{{ task.status }}"
           class="{{ _ROW }} {% if task.status == 'done' %}is-done{% endif %}">
         <td class="{{ _TD }} w-12">
-          <form method="post" action="{{ url_for('task.complete', task_id=task.id) }}">
+          <form method="post" action="{{ url_for('task.complete', task_id=task.public_id) }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             {% if next_url %}<input type="hidden" name="next" value="{{ next_url }}">{% endif %}
             <button type="submit" data-task-toggle
@@ -37,7 +37,7 @@
           </form>
         </td>
         <td class="{{ _TD }} min-w-0">
-          <a href="{{ url_for('task.detail', task_id=task.id) }}" data-task-title
+          <a href="{{ url_for('task.detail', task_id=task.public_id) }}" data-task-title
              class="block max-w-[280px] truncate font-medium text-ink-deep transition hover:text-primary md:max-w-none"
              title="{{ task.title }}">{{ task.title }}</a>
         </td>
@@ -49,7 +49,7 @@
         </td>
         <td class="{{ _TD }} text-right">
           {% if task.status == 'done' %}
-          <form method="post" action="{{ url_for('task.archive', task_id=task.id) }}">
+          <form method="post" action="{{ url_for('task.archive', task_id=task.public_id) }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             {% if next_url %}<input type="hidden" name="next" value="{{ next_url }}">{% endif %}
             <button type="submit" class="{{ _ACTION_BTN }} hover:text-success"
@@ -83,7 +83,7 @@
       {% for task in tasks %}
       <tr class="{{ _ROW }}">
         <td class="{{ _TD }} min-w-0">
-          <a href="{{ url_for('task.detail', task_id=task.id) }}"
+          <a href="{{ url_for('task.detail', task_id=task.public_id) }}"
              class="block max-w-[280px] truncate font-medium text-stone line-through transition hover:text-primary md:max-w-none"
              title="{{ task.title }}">{{ task.title }}</a>
         </td>
@@ -91,7 +91,7 @@
         <td class="{{ _TD }} text-[14px] text-slate">{{ task.archived_at | fmt_date }}</td>
         <td class="{{ _TD }}">
           <div class="flex items-center justify-end gap-1">
-            <form method="post" action="{{ url_for('task.unarchive', task_id=task.id) }}">
+            <form method="post" action="{{ url_for('task.unarchive', task_id=task.public_id) }}">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               {% if back_url %}<input type="hidden" name="next" value="{{ back_url }}">{% endif %}
               <button type="submit" class="{{ _ACTION_BTN }} hover:text-success"
@@ -100,7 +100,7 @@
               </button>
             </form>
             <button type="button" data-modal-target="{{ modal_id }}" aria-haspopup="dialog"
-                    data-confirm-action="{{ url_for('task.delete', task_id=task.id) }}"
+                    data-confirm-action="{{ url_for('task.delete', task_id=task.public_id) }}"
                     data-confirm-title="Hapus tugas permanen?"
                     data-confirm-message="Tugas '{{ task.title }}' akan dihapus permanen dan tidak bisa dikembalikan."
                     class="{{ _ACTION_BTN }} hover:text-critical"

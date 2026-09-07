@@ -24,6 +24,13 @@ def _form_payload(form: ProjectForm) -> dict:
     return {k: v for k, v in form.data.items() if k != "csrf_token"}
 
 
+def _get_project_or_404(public_id: str):
+    project = project_service.get_by_public_id(public_id)
+    if project is None:
+        abort(404)
+    return project
+
+
 @project_bp.route("/")
 @login_required
 def index():
@@ -47,13 +54,11 @@ def create():
     return render_template("project/create.html", form=form)
 
 
-@project_bp.route("/<int:project_id>")
+@project_bp.route("/<string:project_id>")
 @login_required
-def detail(project_id: int):
-    project = project_service.get_by_id(project_id)
-    if project is None:
-        abort(404)
-    filters = {"project_id": project_id}
+def detail(project_id: str):
+    project = _get_project_or_404(project_id)
+    filters = {"project_id": project.id}
     tasks = task_service.get_all(filters=filters)
     archived_tasks = task_service.get_archived(filters=filters)
     return render_template(
@@ -61,29 +66,28 @@ def detail(project_id: int):
     )
 
 
-@project_bp.route("/<int:project_id>/edit", methods=["GET", "POST"])
+@project_bp.route("/<string:project_id>/edit", methods=["GET", "POST"])
 @login_required
-def edit(project_id: int):
-    project = project_service.get_by_id(project_id)
-    if project is None:
-        abort(404)
+def edit(project_id: str):
+    project = _get_project_or_404(project_id)
     form = ProjectForm(obj=project)
     if form.validate_on_submit():
         try:
-            project_service.update(project_id, **_form_payload(form))
+            project_service.update(project.id, **_form_payload(form))
             flash(f"Project '{project.name}' berhasil diperbarui.", "success")
-            return redirect(url_for("project.detail", project_id=project_id))
+            return redirect(url_for("project.detail", project_id=project.public_id))
         except ValueError as err:
             flash(str(err), "error")
     return render_template("project/edit.html", form=form, project=project)
 
 
-@project_bp.route("/<int:project_id>/archive", methods=["POST"])
+@project_bp.route("/<string:project_id>/archive", methods=["POST"])
 @login_required
-def archive(project_id: int):
+def archive(project_id: str):
+    project = _get_project_or_404(project_id)
     archived = request.form.get("archived", "true").lower() in {"1", "true", "yes"}
     try:
-        project = project_service.set_archived(project_id, archived)
+        project = project_service.set_archived(project.id, archived)
     except ValueError:
         abort(404)
     verb = "diarsipkan" if archived else "dipulihkan"
@@ -91,11 +95,12 @@ def archive(project_id: int):
     return redirect(url_for("project.index"))
 
 
-@project_bp.route("/<int:project_id>/delete", methods=["POST"])
+@project_bp.route("/<string:project_id>/delete", methods=["POST"])
 @login_required
-def delete(project_id: int):
+def delete(project_id: str):
+    project = _get_project_or_404(project_id)
     try:
-        project = project_service.delete(project_id)
+        project = project_service.delete(project.id)
     except ValueError:
         abort(404)
     flash(f"Project '{project.name}' dihapus. Tugas di dalamnya kini tanpa project.", "success")

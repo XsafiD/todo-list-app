@@ -93,14 +93,14 @@ class TestProjectRoutes:
         assert b"Pekerjaan" in response.data
 
     def test_detail_404_bila_tidak_ada(self, client, login_user):
-        assert client.get("/projects/999").status_code == 404
+        assert client.get("/projects/NonexistentId123").status_code == 404
 
     def test_detail_tampilkan_tugas_dan_arsip(self, client, login_user, sample_project):
         """Section Tugas berisi task aktif; section Arsip berisi task terarsip."""
         done = task_service.create(title="Tugas Lama", project_id=sample_project.id, status="done")
         task_service.archive(done.id)
         task_service.create(title="Tugas Aktif", project_id=sample_project.id)
-        response = client.get(f"/projects/{sample_project.id}")
+        response = client.get(f"/projects/{sample_project.public_id}")
         assert response.status_code == 200
         assert b"Tugas Aktif" in response.data
         assert b"Tugas Lama" in response.data

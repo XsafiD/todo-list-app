@@ -52,7 +52,7 @@
       <i class="fa-solid fa-circle-check"></i>
     </span>
 
-    <a href="{{ url_for('task.detail', task_id=task.id) }}" class="min-w-0 flex-1">
+    <a href="{{ url_for('task.detail', task_id=task.public_id) }}" class="min-w-0 flex-1">
       <p class="truncate text-[16px] font-medium text-stone line-through" title="{{ task.title }}">{{ task.title }}</p>
       <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
         {{ project_tag(task.project_name, task.project_color) }}
@@ -70,7 +70,7 @@
     </div>
 
     <div class="flex shrink-0 items-center gap-1">
-      <form method="post" action="{{ url_for('task.unarchive', task_id=task.id) }}">
+      <form method="post" action="{{ url_for('task.unarchive', task_id=task.public_id) }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="next" value="{{ back_url }}">
         <button type="submit"
@@ -80,7 +80,7 @@
         </button>
       </form>
       <button type="button" data-modal-target="modal-delete-archived-task" aria-haspopup="dialog"
-              data-confirm-action="{{ url_for('task.delete', task_id=task.id) }}"
+              data-confirm-action="{{ url_for('task.delete', task_id=task.public_id) }}"
               data-confirm-title="Hapus tugas permanen?"
               data-confirm-message="Tugas '{{ task.title }}' akan dihapus permanen dan tidak bisa dikembalikan."
               class="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-[12px] font-medium text-slate transition hover:bg-surface-soft hover:text-critical"

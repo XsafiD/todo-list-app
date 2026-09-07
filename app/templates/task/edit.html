@@ -9,7 +9,7 @@
 {% block authenticated_content %}
 {{ page_path([
      {"label": "Tugas", "href": url_for("task.index")},
-     {"label": task.title, "href": url_for("task.detail", task_id=task.id)},
+     {"label": task.title, "href": url_for("task.detail", task_id=task.public_id)},
      {"label": "Edit"},
    ]) }}
 
@@ -27,7 +27,7 @@
     {{ datetime_field(form.deadline) }}
     <div class="flex items-center gap-3 pt-2">
       {{ submit_button("Simpan Perubahan", icon="fa-check") }}
-      {{ cancel_link(url_for("task.detail", task_id=task.id)) }}
+      {{ cancel_link(url_for("task.detail", task_id=task.public_id)) }}
     </div>
   </form>
 </div>

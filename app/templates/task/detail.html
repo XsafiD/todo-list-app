@@ -29,11 +29,11 @@
     </div>
 
     <div class="flex shrink-0 items-center gap-2">
-      <a href="{{ url_for('task.edit', task_id=task.id) }}"
+      <a href="{{ url_for('task.edit', task_id=task.public_id) }}"
          class="inline-flex items-center gap-2 rounded-full border border-primary px-4 py-2 text-[14px] font-medium text-primary transition hover:bg-primary-soft">
         <i class="fa-solid fa-pen text-[12px]" aria-hidden="true"></i>Edit
       </a>
-      <form method="post" action="{{ url_for('task.complete', task_id=task.id) }}">
+      <form method="post" action="{{ url_for('task.complete', task_id=task.public_id) }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button type="submit"
                 class="inline-flex items-center gap-2 rounded-full px-3 py-2 text-[12px] font-medium text-slate transition hover:bg-surface-soft hover:text-success">
@@ -109,7 +109,7 @@
     <p class="text-[14px] text-slate">Tugas sudah diarsipkan — timeline terkunci, tidak bisa menambah catatan baru.</p>
   </div>
   {% else %}
-  <form method="post" action="{{ url_for('task.add_note', task_id=task.id) }}" class="mt-5">
+  <form method="post" action="{{ url_for('task.add_note', task_id=task.public_id) }}" class="mt-5">
     {{ note_form.hidden_tag() }}
     {{ note_form.content.label(class="sr-only") }}
     {{ note_form.content(class="min-h-[80px] w-full resize-y rounded-lg border border-hairline bg-surface px-4 py-2.5 text-[14px] text-ink transition placeholder:text-stone focus:border-primary focus:outline-none focus:ring-3 focus:ring-primary/10") }}
@@ -137,7 +137,7 @@
           </div>
           <button type="button" data-modal-target="modal-delete-note" aria-haspopup="dialog"
                   aria-label="Hapus catatan: {{ note.content[:40] }}{{ '…' if note.content|length > 40 }}"
-                  data-confirm-action="{{ url_for('task.delete_note', task_id=task.id, note_id=note.id) }}"
+                  data-confirm-action="{{ url_for('task.delete_note', task_id=task.public_id, note_id=note.id) }}"
                   data-confirm-title="Hapus catatan?"
                   data-confirm-message="Catatan ini akan dihapus permanen dari timeline."
                   class="inline-flex shrink-0 items-center gap-2 rounded-full border border-critical px-3 py-1.5 text-[12px] font-medium text-critical transition hover:bg-critical/10 active:scale-[0.98]">
@@ -186,7 +186,7 @@
   "modal-delete-task",
   "Hapus tugas?",
   "Tugas '" ~ task.title ~ "' akan dihapus permanen.",
-  url_for("task.delete", task_id=task.id),
+  url_for("task.delete", task_id=task.public_id),
   "Hapus Tugas",
 ) }}
 

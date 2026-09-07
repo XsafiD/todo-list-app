@@ -26,6 +26,7 @@ STATUS_VALUES = {s.value for s in TaskStatus}
 class TaskView:
     """DTO tampilan task."""
     id: int
+    public_id: str
     project_id: int | None
     project_name: str | None
     project_color: str | None
@@ -86,6 +87,7 @@ def _to_view(task: Task, now: datetime) -> TaskView:
     state = _deadline_state(task.deadline, status, now)
     return TaskView(
         id=task.id,
+        public_id=task.public_id,
         project_id=task.project_id,
         project_name=task.project.name if task.project else None,
         project_color=task.project.color if task.project else None,
@@ -184,6 +186,16 @@ class TaskService:
         task = (
             Task.query.options(joinedload(Task.project))
             .filter_by(id=task_id)
+            .first()
+        )
+        if task is None:
+            return None
+        return _to_view(task, datetime.now())
+
+    def get_by_public_id(self, public_id: str) -> TaskView | None:
+        task = (
+            Task.query.options(joinedload(Task.project))
+            .filter_by(public_id=public_id)
             .first()
         )
         if task is None:

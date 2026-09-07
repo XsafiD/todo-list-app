@@ -28,12 +28,12 @@
     </div>
 
     <div class="flex items-center gap-2">
-      <a href="{{ url_for('project.edit', project_id=project.id) }}"
+      <a href="{{ url_for('project.edit', project_id=project.public_id) }}"
        class="inline-flex items-center gap-2 rounded-full border border-primary px-4 py-2 text-[14px] font-medium text-primary transition hover:bg-primary-soft">
       <i class="fa-solid fa-pen text-[12px]" aria-hidden="true"></i>Edit
     </a>
     {% if project.archived %}
-    <form method="post" action="{{ url_for('project.archive', project_id=project.id) }}">
+    <form method="post" action="{{ url_for('project.archive', project_id=project.public_id) }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <input type="hidden" name="archived" value="false">
       <button type="submit" class="inline-flex items-center gap-2 rounded-full px-3 py-2 text-[12px] font-medium text-charcoal transition hover:bg-surface-soft hover:text-success">
@@ -41,7 +41,7 @@
       </button>
     </form>
     {% else %}
-    <form method="post" action="{{ url_for('project.archive', project_id=project.id) }}">
+    <form method="post" action="{{ url_for('project.archive', project_id=project.public_id) }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <input type="hidden" name="archived" value="true">
       <button type="submit" class="inline-flex items-center gap-2 rounded-full px-3 py-2 text-[12px] font-medium text-charcoal transition hover:bg-surface-soft hover:text-warning">
@@ -81,18 +81,18 @@
 <section class="mt-10" aria-label="Tugas project">
   <div class="flex items-center justify-between border-b border-hairline-soft pb-4">
     <h2 class="text-[24px] font-bold text-ink-deep">Tugas</h2>
-    <a href="{{ url_for('task.create', project_id=project.id) }}"
+    <a href="{{ url_for('task.create', project_id=project.public_id) }}"
        class="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-[14px] font-medium text-white transition hover:bg-primary-deep">
       <i class="fa-solid fa-plus text-[12px]" aria-hidden="true"></i>Tambah Tugas
     </a>
   </div>
   {% if tasks %}
   <div class="mt-5">
-    {{ task_table(tasks, next_url=url_for('project.detail', project_id=project.id)) }}
+    {{ task_table(tasks, next_url=url_for('project.detail', project_id=project.public_id)) }}
   </div>
   {% else %}
   <div class="mt-5">
-    {{ empty_state("fa-list-check", "Belum ada tugas", "Project ini belum memiliki tugas.", url_for('task.create', project_id=project.id), "Tambah Tugas") }}
+    {{ empty_state("fa-list-check", "Belum ada tugas", "Project ini belum memiliki tugas.", url_for('task.create', project_id=project.public_id), "Tambah Tugas") }}
   </div>
   {% endif %}
 </section>
@@ -110,7 +110,7 @@
   </summary>
   <div class="mt-5">
     {% if archived_tasks %}
-    {{ archived_task_table(archived_tasks, back_url=url_for('project.detail', project_id=project.id)) }}
+    {{ archived_task_table(archived_tasks, back_url=url_for('project.detail', project_id=project.public_id)) }}
     {% else %}
     {{ empty_state("fa-box-archive", "Belum ada arsip", "Tugas selesai dapat diarsipkan dari tabel di atas — arsip tetap tampil di halaman ini.") }}
     {% endif %}
@@ -124,14 +124,14 @@
   "Hapus Permanen",
   icon="fa-trash",
   tone="critical",
-  next_url=url_for("project.detail", project_id=project.id),
+  next_url=url_for("project.detail", project_id=project.public_id),
 ) }}
 
 {{ confirm_modal(
   "modal-delete-project",
   "Hapus project?",
   "Project '" ~ project.name ~ "' akan dihapus. Tugas di dalamnya akan menjadi tanpa project.",
-  url_for("project.delete", project_id=project.id),
+  url_for("project.delete", project_id=project.public_id),
   "Hapus Project",
 ) }}
 {% endblock %}
