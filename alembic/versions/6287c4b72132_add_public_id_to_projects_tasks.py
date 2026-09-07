@@ -41,8 +41,8 @@ def upgrade() -> None:
         public_id = _generate_public_id()
         bind.execute(text('UPDATE tasks SET public_id = :pid WHERE id = :id'), {'pid': public_id, 'id': task_id})
 
-    op.alter_column('projects', 'public_id', nullable=False)
-    op.alter_column('tasks', 'public_id', nullable=False)
+    op.alter_column('projects', 'public_id', existing_type=sa.String(16), nullable=False)
+    op.alter_column('tasks', 'public_id', existing_type=sa.String(16), nullable=False)
 
     op.create_index('idx_projects_public_id', 'projects', ['public_id'], unique=True)
     op.create_index('idx_tasks_public_id', 'tasks', ['public_id'], unique=True)
