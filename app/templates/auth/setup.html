@@ -1,13 +1,17 @@
 {% extends "base.html" %}
 {% from "components/form.html" import text_field, submit_button %}
+{% from "components/alert.html" import flash_alerts %}
 
 {% block title %}Buat Akun · dash.xsadev{% endblock %}
+
+{# Flash dipindah ke dalam card (override block public_flash base) #}
+{% block public_flash %}{% endblock %}
 
 {% block public_content %}
 <div class="flex min-h-[70vh] items-center justify-center">
   <div class="w-full max-w-sm">
     <div class="mb-8 text-center">
-      <span class="mx-auto flex h-14 w-14 items-center justify-center rounded-xl bg-primary text-white shadow-lg">
+      <span class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary-soft text-primary">
         <i class="fa-solid fa-user-plus text-2xl" aria-hidden="true"></i>
       </span>
       <h1 class="mt-4 text-[32px] text-ink-deep"><span class="font-bold">dash</span><span class="font-normal text-primary-deep">.xsadev</span></h1>
@@ -16,18 +20,27 @@
 
     <form method="post" class="rounded-lg border border-hairline bg-surface p-6 shadow-sm">
       {{ form.hidden_tag() }}
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="mb-4 space-y-2">{{ flash_alerts(messages) }}</div>
+        {% endif %}
+      {% endwith %}
       <div class="space-y-4">
-        {{ text_field(form.username, placeholder="Username") }}
-        {{ text_field(form.password, placeholder="Password") }}
-        {{ text_field(form.confirm_password, placeholder="Konfirmasi Password") }}
+        {{ text_field(form.username, placeholder="Masukkan username Anda", icon="fa-user") }}
+        {{ text_field(form.password, placeholder="••••••••", icon="fa-lock") }}
+        {{ text_field(form.confirm_password, placeholder="Ulangi password", icon="fa-lock") }}
       </div>
       <div class="mt-6">
-        {{ submit_button("Buat Akun", icon="fa-user-plus") }}
+        {{ submit_button("Buat Akun", icon="fa-user-plus", full=true) }}
       </div>
       <p class="mt-4 text-center text-[12px] text-stone">
         Akun ini hanya dibuat satu kali. Setelahnya, masuk seperti biasa.
       </p>
     </form>
+
+    <p class="mt-6 text-center text-[12px] text-stone">
+      &copy; 2026 xsadev. Seluruh hak cipta dilindungi.
+    </p>
   </div>
 </div>
 {% endblock %}

@@ -12,16 +12,26 @@
   <span class="mb-1.5 block text-[16px] font-medium text-charcoal">{{ field.label.text }}</span>
 {%- endmacro %}
 
-{% macro _input_cls(field) -%}
-  w-full rounded-lg border bg-surface px-4 py-2.5 text-[14px] text-ink transition
+{% macro _input_cls(field, icon="") -%}
+  w-full rounded-lg border bg-surface text-[14px] text-ink transition
+  {{ 'pl-10' if icon else 'px-4' }} py-2.5
   placeholder:text-stone focus:border-primary focus:outline-none focus:ring-3 focus:ring-primary/10
   {{ 'border-critical' if field.errors else 'border-hairline' }}
 {%- endmacro %}
 
-{% macro text_field(field, placeholder="") -%}
+{% macro text_field(field, placeholder="", icon="") -%}
 <label class="block">
   {{ _label(field) }}
+  {% if icon %}
+  <div class="relative">
+    <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-steel" aria-hidden="true">
+      <i class="fa-solid {{ icon }} text-[14px]"></i>
+    </span>
+    {{ field(class=_input_cls(field, icon=icon), placeholder=placeholder) }}
+  </div>
+  {% else %}
   {{ field(class=_input_cls(field), placeholder=placeholder) }}
+  {% endif %}
   {{ _errors(field) }}
 </label>
 {%- endmacro %}
@@ -60,9 +70,10 @@
 </label>
 {%- endmacro %}
 
-{% macro submit_button(label, icon="fa-check") -%}
+{% macro submit_button(label, icon="fa-check", full=false) -%}
 <button type="submit" data-submit-button
-        class="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-[14px] font-medium text-white transition hover:bg-primary-deep active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60">
+        class="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-4 py-2 text-[14px] font-medium text-white transition hover:bg-primary-deep active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60
+               {{ 'w-full' if full }}">
   <i class="fa-solid {{ icon }} text-[13px]" aria-hidden="true"></i>{{ label }}
 </button>
 {%- endmacro %}

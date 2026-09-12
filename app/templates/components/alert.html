@@ -1,0 +1,19 @@
+{# components/alert.html — macro render flash messages (category-aware) #}
+{% macro flash_alerts(messages) -%}
+  {% for category, message in messages %}
+  <div data-alert
+       class="flex items-center gap-3 rounded-lg border px-4 py-3 text-[14px]
+              {% if category == 'error' %}border-critical/20 bg-critical/10 text-critical-ink
+              {% elif category == 'success' %}border-success/20 bg-success/10 text-success-ink
+              {% else %}border-info/20 bg-info/10 text-info-ink{% endif %}">
+    <i class="fa-solid
+              {% if category == 'error' %}fa-circle-exclamation
+              {% elif category == 'success' %}fa-circle-check
+              {% else %}fa-circle-info{% endif %}" aria-hidden="true"></i>
+    <p class="flex-1">{{ message }}</p>
+    <button type="button" data-alert-close class="opacity-50 transition hover:opacity-100" aria-label="Tutup">
+      <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+    </button>
+  </div>
+  {% endfor %}
+{%- endmacro %}
